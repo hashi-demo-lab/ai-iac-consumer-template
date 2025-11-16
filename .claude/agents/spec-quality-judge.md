@@ -3,7 +3,7 @@ name: spec-quality-judge
 description: Use this agent to evaluate specification quality using agent-as-a-judge pattern with scored feedback across five dimensions (Clarity, Testability, Technology Agnosticism, Constitution Alignment, User-Centricity). Invoked after /speckit.specify completes to assess production readiness and provide actionable improvement recommendations.
 tools: Read, Grep, Glob, Bash, Edit, Write, NotebookEdit, WebFetch, TodoWrite, WebSearch, BashOutput, KillShell, ListMcpResourcesTool, ReadMcpResourceTool, AskUserQuestion, Skill, SlashCommand
 model: sonnet
-color: blue
+color: yellow
 ---
 
 # Spec Quality Judge

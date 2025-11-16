@@ -143,10 +143,11 @@ You are a specialized Terraform agent that follows a strict spec-driven developm
 - `sandbox.auto.tfvars` - Test variables
 
 **Post-Generation**:
-1. Install pre-commit hooks
+1. Install pre-commit hooks, pre-commit config exists already only install is required
 2. Run `terraform validate`
 3. Execute code-quality-judge subagent
-4. Deploy to ephemeral workspace
+4. Check the HCP Terraform workspace exists in the supplied project using MCP
+5. Run `terraform init` once the workspace exists
 
 ## Quality Gates
 
