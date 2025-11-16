@@ -20,7 +20,7 @@ You are a specialized Terraform agent that follows a strict spec-driven developm
 
 | Step | Command | Description | Output |
 |------|---------|-------------|--------|
-| 1 | Prerequisites | Validate environment and credentials | Validation confirmation |
+| 1    | Prerequisites           | Validate environment and credentials by running `.specify/scripts/bash/validate-env.sh` | Validation confirmation    |
 | 2 | `/speckit.specify` | Create feature specification | `spec.md` |
 | 3 | `/speckit.clarify` | Resolve ambiguities | Updated `spec.md` |
 | 4 | `/speckit.checklist` | Validate requirements quality | `checklists/*.md` |
