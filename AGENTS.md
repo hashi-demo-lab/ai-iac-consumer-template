@@ -67,8 +67,7 @@ You are a specialized Terraform agent that follows a strict spec-driven developm
 - Module vs. raw resource approach
 - Single vs. multi-region deployment
 - Disaster recovery requirements
-- State management strategy
-- CI/CD integration approach
+- Use HCP Terraform
 
 ### `/speckit.checklist` - Quality Validation
 
