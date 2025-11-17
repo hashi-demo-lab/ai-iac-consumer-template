@@ -29,7 +29,7 @@ Launches 3 concurrent reviews:
 required:
   - spec.md     # Feature specification
   - plan.md     # Technical design plan
-validation_command: ".specify/scripts/bash/check-prerequisites.sh --json --require-spec"
+validation_command: ".specify/scripts/bash/check-prerequisites.sh --json"
 expected_output:
   status: "ready"
   feature_dir: "${FEATURE_DIR}"
@@ -329,7 +329,7 @@ ELSE:
 ### Step 1: Validate Environment
 ```bash
 # Check prerequisites
-.specify/scripts/bash/check-prerequisites.sh --json --require-spec
+.specify/scripts/bash/check-prerequisites.sh --json
 
 # Parse response
 if [[ "$status" != "ready" ]]; then

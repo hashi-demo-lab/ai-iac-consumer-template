@@ -143,7 +143,7 @@ This document contains:
 Run prerequisite check:
 
 ```bash
-.specify/scripts/bash/check-prerequisites.sh --json --require-spec
+.specify/scripts/bash/check-prerequisites.sh --json
 ```
 
 Parse JSON output for:
