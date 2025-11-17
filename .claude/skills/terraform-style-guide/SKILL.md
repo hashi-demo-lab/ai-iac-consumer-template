@@ -1756,7 +1756,7 @@ terraform {
 
 - Terraform (`terraform validate/fmt/test`)
 - terrafmt
-- Checkov
+- trivy
 - tflint (with azurerm ruleset)
 - Go (optional for custom tests)
 
