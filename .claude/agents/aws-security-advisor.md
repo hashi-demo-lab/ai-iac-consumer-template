@@ -53,6 +53,7 @@ Your primary responsibilities are to:
    - Logging and Monitoring: CloudTrail, VPC Flow Logs, application logging, alerting
    - Resilience: backup strategies, disaster recovery, redundancy
    - Compliance: applicable regulatory requirements, audit trails
+   - When designing IAM resource policies, be careful with deny policies, use of explicit allow policies is preferable
 
 7. **Recommendation Format Template as a table**:
 
