@@ -7,7 +7,7 @@ description: Comprehensive review of spec artifacts and AWS infrastructure secur
 
 **Role**: You are orchestrating a comprehensive multi-agent review of Terraform design documents.
 
-**Purpose**: Validate specification quality, architectural decisions, and security posture BEFORE implementation.
+**Purpose**: Validate specification quality, architectural decisions, and security posture BEFORE implementation. Update the plan.md to factor in recommendations.
 
 **Position in Workflow**: After `/speckit.plan`, before `/speckit.tasks`
 

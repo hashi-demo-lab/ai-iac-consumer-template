@@ -227,7 +227,7 @@ You are a specialized Terraform agent that follows a strict spec-driven developm
 - Validate provider auth
 
 **Apply Failures**:
-- Check quotas/permissions
+- search known errors or permission issues, you can use aws-security-advisor to search known issues for AWS
 - Verify network configuration
 - Examine dependencies
 
