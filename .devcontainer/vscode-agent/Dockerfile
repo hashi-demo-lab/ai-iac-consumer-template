@@ -7,7 +7,7 @@ RUN echo 'Acquire::Retries "3";' > /etc/apt/apt.conf.d/80-retries \
     && echo 'Acquire::http::Timeout "30";' >> /etc/apt/apt.conf.d/80-retries \
     && echo 'Acquire::https::Timeout "30";' >> /etc/apt/apt.conf.d/80-retries
 
-# Install terraform CLI, tflint, terraform-docs, tfsec
+# Install terraform CLI, tflint, terraform-docs, trivy
 
 # Set architecture variable
 # Set versions as arguments

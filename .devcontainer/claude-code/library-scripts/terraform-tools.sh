@@ -47,11 +47,11 @@ rm -f /tmp/terraform-docs.tar.gz
 # sudo mv /tmp/tfsec /usr/local/bin/
 # sudo chmod +x /usr/local/bin/tfsec
 
-echo "Installing terrascan v${TERRASCAN_VERSION}..."
-curl -sSLo /tmp/terrascan.tar.gz "https://github.com/tenable/terrascan/releases/download/v${TERRASCAN_VERSION}/terrascan_${TERRASCAN_VERSION}_Linux_x86_64.tar.gz"
-tar -xzf /tmp/terrascan.tar.gz -C /tmp
-sudo mv /tmp/terrascan /usr/local/bin/
-rm -f /tmp/terrascan.tar.gz
+# echo "Installing terrascan v${TERRASCAN_VERSION}..."
+# curl -sSLo /tmp/terrascan.tar.gz "https://github.com/tenable/terrascan/releases/download/v${TERRASCAN_VERSION}/terrascan_${TERRASCAN_VERSION}_Linux_x86_64.tar.gz"
+# tar -xzf /tmp/terrascan.tar.gz -C /tmp
+# sudo mv /tmp/terrascan /usr/local/bin/
+# rm -f /tmp/terrascan.tar.gz
 
 echo "Installing tflint v${TFLINT_VERSION}..."
 curl -sSLo /tmp/tflint.zip "https://github.com/terraform-linters/tflint/releases/download/v${TFLINT_VERSION}/tflint_linux_amd64.zip"

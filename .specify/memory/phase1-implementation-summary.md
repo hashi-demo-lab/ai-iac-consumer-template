@@ -537,7 +537,7 @@ Based on 2024-2025 research, we expect:
 
 ### Tools Integrated
 
-1. Pre-commit framework (tfsec, trivy, checkov, terraform-validate)
+1. Pre-commit framework (tflint trivy, checkov, terraform-validate)
 2. Terraform native testing (`.tftest.hcl`)
 3. HCP Terraform ephemeral workspaces
 4. MCP (Model Context Protocol) for module registry access

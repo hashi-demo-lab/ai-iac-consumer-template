@@ -484,7 +484,6 @@ If requested or security score < 7.0:
 
 ```bash
 terraform validate
-tfsec . --format json
 trivy config . --format json
 checkov --framework terraform --output json
 vault-radar scan --format json  # if available
