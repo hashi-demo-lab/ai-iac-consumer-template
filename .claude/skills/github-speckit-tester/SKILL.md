@@ -30,6 +30,7 @@ The test harness uses subagents to:
 - Parallelize independent phases when possible
 - Maintain clean execution context per phase
 
+Document start time and end time, totals execution time, and tokens consumed inclusive of all subagents
 
 ### Execution Workflow
 
