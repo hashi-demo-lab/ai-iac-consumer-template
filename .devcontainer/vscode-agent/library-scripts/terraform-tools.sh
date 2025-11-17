@@ -3,6 +3,29 @@ set -e
 
 # This script installs Terraform and related tools
 
+# Helper function to retry commands
+retry_command() {
+    local max_attempts=3
+    local attempt=1
+    local delay=5
+    
+    while [ $attempt -le $max_attempts ]; do
+        if "$@"; then
+            return 0
+        else
+            if [ $attempt -lt $max_attempts ]; then
+                echo "Command failed. Attempt $attempt/$max_attempts. Retrying in ${delay}s..."
+                sleep $delay
+                delay=$((delay * 2))
+            fi
+            attempt=$((attempt + 1))
+        fi
+    done
+    
+    echo "Command failed after $max_attempts attempts."
+    return 1
+}
+
 # Versions
 TARGETARCH=arm64
 TERRAFORM_VERSION=${1:-"1.13.4"}
@@ -97,33 +120,20 @@ rm -f /tmp/infracost.tar.gz
 # We'll do this in the Dockerfile after switching to node user
 
 echo "Installing Trivy..."
-sudo apt-get install -y wget apt-transport-https gnupg lsb-release
-# wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | sudo apt-key add -
+retry_command sudo apt-get update
+sudo apt-get install -y --no-install-recommends wget apt-transport-https gnupg lsb-release
 wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | gpg --dearmor | sudo tee /usr/share/keyrings/trivy.gpg > /dev/null
 echo deb [signed-by=/usr/share/keyrings/trivy.gpg] https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main | sudo tee -a /etc/apt/sources.list.d/trivy.list
-sudo apt-get update
-sudo apt-get install -y trivy
+retry_command sudo apt-get update
+sudo apt-get install -y --no-install-recommends trivy
+sudo apt-get clean && sudo rm -rf /var/lib/apt/lists/*
 
-echo "Installing Checkov v${CHECKOV_VERSION} in virtual environment..."
-# Install python3-venv if not already installed
-sudo apt-get update && sudo apt-get install -y python3-venv
+echo "Installing Checkov v${CHECKOV_VERSION} using uv..."
+# Use uv to install checkov - much smaller than venv approach
+$HOME/.local/bin/uv tool install checkov==${CHECKOV_VERSION}
 
-# Create a virtual environment for Checkov
-VENV_DIR="/opt/checkov-venv"
-sudo python3 -m venv ${VENV_DIR}
-
-# Install Checkov in the virtual environment
-sudo ${VENV_DIR}/bin/pip install checkov==${CHECKOV_VERSION}
-
-
-# Create a wrapper script for Checkov
-sudo tee /usr/local/bin/checkov > /dev/null << EOL
-#!/bin/bash
-${VENV_DIR}/bin/checkov \$@
-EOL
-
-# Make the wrapper executable
-sudo chmod +x /usr/local/bin/checkov
+# Clean up any apt cache
+sudo apt-get clean && sudo rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # Create .tflint.hcl config file
 mkdir -p $HOME/.tflint.d

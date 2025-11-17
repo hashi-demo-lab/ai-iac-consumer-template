@@ -1,4 +1,11 @@
+# syntax=docker/dockerfile:1.4
+
 FROM mcr.microsoft.com/devcontainers/base:noble
+
+# Configure apt for better reliability
+RUN echo 'Acquire::Retries "3";' > /etc/apt/apt.conf.d/80-retries \
+    && echo 'Acquire::http::Timeout "30";' >> /etc/apt/apt.conf.d/80-retries \
+    && echo 'Acquire::https::Timeout "30";' >> /etc/apt/apt.conf.d/80-retries
 
 # Install terraform CLI, tflint, terraform-docs, tfsec
 
@@ -18,25 +25,27 @@ ARG CHECKOV_VERSION="3.2.489"
 ARG VAULT_RADAR_VERSION="0.36.0"
 ARG INSTALL_VAULT_RADAR="true"
 
-# Install required packages
-RUN apt-get update && apt-get install -y \
+# Install required packages and clean up in same layer
+RUN apt-get update || (sleep 5 && apt-get update) || (sleep 10 && apt-get update) \
+    && apt-get install -y --no-install-recommends \
     wget \
     unzip \
     curl \
     gnupg \
-    npm \
     git \
     gh \
     jq \
     software-properties-common \
-    && rm -rf /var/lib/apt/lists/*
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-# Install Node.js (required for GitHub Copilot CLI)
+# Install Node.js and GitHub Copilot CLI in one layer
 RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
-    && apt-get install -y nodejs
-
-# Install GitHub Copilot CLI
-RUN npm install -g @github/copilot
+    && apt-get install -y --no-install-recommends nodejs \
+    && npm install -g @github/copilot \
+    && npm cache clean --force \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # Install Terraform CLI
 # RUN wget -O- https://apt.releases.hashicorp.com/gpg | gpg --dearmor | tee /usr/share/keyrings/hashicorp-archive-keyring.gpg > /dev/null \
@@ -88,31 +97,26 @@ RUN chmod +x /tmp/library-scripts/*.sh
 
 USER vscode
 
-# Install uv and pre-commit for the vscode user
+# Install all user tools in a single layer to reduce image size
 RUN curl -LsSf https://astral.sh/uv/install.sh | sh \
     && echo 'export PATH=$HOME/.local/bin:$PATH' >> ~/.bashrc \
     && $HOME/.local/bin/uv tool install pre-commit \
-    && echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc
-
-RUN ~/.local/bin/uv tool install specify-cli --from git+https://github.com/github/spec-kit.git
-
-RUN sudo mkdir -p /workspace && \
-  sudo chown -R $USER:$USER /workspace 
-
-# Install cloud CLI tools
-RUN /tmp/library-scripts/cloud-cli-tools.sh
-
-RUN /tmp/library-scripts/terraform-tools.sh \
-    "${TERRAFORM_VERSION}" \
-    "${TERRAFORM_DOCS_VERSION}" \
-    "${TFSEC_VERSION}" \
-    "${TERRASCAN_VERSION}" \
-    "${TFLINT_VERSION}" \
-    "${TFLINT_AWS_RULESET_VERSION}" \
-    "${TFLINT_AZURE_RULESET_VERSION}" \
-    "${TFLINT_GCP_RULESET_VERSION}" \
-    "${INFRACOST_VERSION}" \
-    "${CHECKOV_VERSION}" \
-    "${VAULT_RADAR_VERSION}" \
-    "${INSTALL_VAULT_RADAR}"
+    && $HOME/.local/bin/uv tool install specify-cli --from git+https://github.com/github/spec-kit.git \
+    && sudo mkdir -p /workspace \
+    && sudo chown -R $USER:$USER /workspace \
+    && /tmp/library-scripts/cloud-cli-tools.sh \
+    && /tmp/library-scripts/terraform-tools.sh \
+        "${TERRAFORM_VERSION}" \
+        "${TERRAFORM_DOCS_VERSION}" \
+        "${TFSEC_VERSION}" \
+        "${TERRASCAN_VERSION}" \
+        "${TFLINT_VERSION}" \
+        "${TFLINT_AWS_RULESET_VERSION}" \
+        "${TFLINT_AZURE_RULESET_VERSION}" \
+        "${TFLINT_GCP_RULESET_VERSION}" \
+        "${INFRACOST_VERSION}" \
+        "${CHECKOV_VERSION}" \
+        "${VAULT_RADAR_VERSION}" \
+        "${INSTALL_VAULT_RADAR}" \
+    && sudo rm -rf /tmp/library-scripts
 
