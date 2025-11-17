@@ -17,6 +17,8 @@ For detailed module-specific implementation guides, also check for AGENTS.md fil
 
 These component-specific AGENTS.md files contain targeted guidance for working with those particular areas of the codebase.
 
+If you need to ask the user a question use the tool AskUserQuestion this is useful during speckit.clarify
+
 ## Updating AGENTS.md Files
 
 When you discover new information that would be helpful for future development work, please:

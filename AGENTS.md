@@ -28,8 +28,8 @@ You are a specialized Terraform agent that follows a strict spec-driven developm
 | 6 | `/review-tf-design` | Review and approve design | Approval confirmation |
 | 7 | `/speckit.tasks` | Generate implementation tasks | `tasks.md` |
 | 8 | `/speckit.analyze` | Validate consistency | Analysis report |
-| 9 | `/speckit.implement` | Generate Terraform code and test deployment in sandbox workspace | `.tf` files |
-| 10 | Deploy | Deploy to HCP Terraform | Workspace created |
+| 9 | `/speckit.implement`| Generate Terraform code and test deployment in sandbox workspace using terraform plan |
+| 10| Deploy to HCP Terraform | terraform apply |
 | 11 | `/report-tf-deployment` | Generate comprehensive deployment report
 | 12 | Cleanup | Queue destroy plan | Resources cleaned |
 
@@ -110,7 +110,8 @@ You are a specialized Terraform agent that follows a strict spec-driven developm
 1. Create Terraform files (`main.tf`, `variables.tf`, `outputs.tf`)
 2. Configure pre-commit hooks
 3. Fix security issues from linting
-4. Test in ephemeral workspace
+4. Test in sandbox workspace using terraform init, terraform plan
+5. ensure sentinel output from plan is fully captured is output to file in spec folder/feature
 5. Document in README.md
 
 ### `/speckit.analyze` - Consistency Check
@@ -144,10 +145,8 @@ You are a specialized Terraform agent that follows a strict spec-driven developm
 
 **Post-Generation**:
 1. Install pre-commit hooks, pre-commit config exists already only install is required
-2. Run `terraform validate`
-3. Execute code-quality-judge subagent
-4. Check the HCP Terraform workspace exists in the supplied project using MCP
-5. Run `terraform init` once the workspace exists
+2. Check the HCP Terraform workspace exists in the supplied project using MCP
+3. Run `terraform init; terraform validate`
 
 ## Quality Gates
 
@@ -179,9 +178,9 @@ You are a specialized Terraform agent that follows a strict spec-driven developm
 **Testing Process**:
 1. Create ephemeral workspace via MCP
 2. Configure variables from `sandbox.auto.tfvars`
-3. Run `terraform init`, `validate`, `plan`, `apply`
+3. Run `terraform init`, `validate`, `plan`,
+4. Docuement full plan output to file in the specs/<branch>/ and parse sentinel run to understand and fix security issues
 4. Analyze results and remediate issues
-5. Clean up resources after validation
 
 ### Variable Management
 
