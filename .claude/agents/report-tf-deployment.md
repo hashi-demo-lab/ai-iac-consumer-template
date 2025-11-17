@@ -29,18 +29,17 @@ REPORT_FILE="${REPORT_DIR}/deployment_report_${TIMESTAMP}.md"
 
 **Git**: Branch, commit SHA, author, files changed, lines +/-, PR info
 
-**Token Usage**: Run `/context`, extract totals and breakdown
+**Agent Token Usage**: extract totals and breakdown across all phases
 
-**Tool Calls**: Review conversation for failures, document remediations, categorize by type
+**AI Agent Tool Calls**: Review Tool calls stats and failures, document remediations, categorize by type
 
 **Agents**: List all subagent calls (speckit.*, code-quality-judge, etc.) and skills with purpose/outcome
 
 **Workarounds vs Fixes**: CRITICAL - itemize what was worked around vs fixed, explain why, prioritize future fixes
 
 **Security**: Collect results from:
-- `terraform validate`
 - `trivy config .`
-- `checkov -d .`
+- `tflint`
 - `vault-radar-scan .`
 Categorize by severity, document remediation status
 
