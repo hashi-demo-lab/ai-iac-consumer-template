@@ -231,15 +231,6 @@ This section documents issues that were **worked around** rather than **properly
 {{VALIDATE_OUTPUT}}
 ```
 
-#### checkov
-
-| Status | Critical | High | Medium | Low | Total Issues |
-|--------|----------|------|--------|-----|--------------|
-| {{CHECKOV_STATUS}} | {{CHECKOV_CRITICAL}} | {{CHECKOV_HIGH}} | {{CHECKOV_MEDIUM}} | {{CHECKOV_LOW}} | {{CHECKOV_TOTAL}} |
-
-**Key Findings**:
-{{CHECKOV_FINDINGS}}
-
 #### trivy
 
 | Status | Critical | High | Medium | Low | Total Issues |

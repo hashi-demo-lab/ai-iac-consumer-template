@@ -159,7 +159,6 @@
 | terraform validate | {{VALIDATE_STATUS}} | {{VALIDATE_COUNT}} | {{VALIDATE_DETAILS}} |
 | tflint | {{TFLINT_STATUS}} | {{TFLINT_COUNT}} | {{TFLINT_DETAILS}} |
 | trivy | {{TRIVY_STATUS}} | {{TRIVY_COUNT}} | {{TRIVY_DETAILS}} |
-| checkov | {{CHECKOV_STATUS}} | {{CHECKOV_COUNT}} | {{CHECKOV_DETAILS}} |
 | vault-radar-scan | {{VAULT_STATUS}} | {{VAULT_COUNT}} | {{VAULT_DETAILS}} |
 
 **Security Recommendation**: {{SECURITY_RECOMMENDATION}}

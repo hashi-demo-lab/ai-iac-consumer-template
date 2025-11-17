@@ -263,7 +263,7 @@ Round to one decimal place.
 |------|--------|----------|
 | terraform validate | ✅/❌ | [Error count] |
 | trivy | ✅/❌ | [Vulnerability count] |
-| checkov | ✅/❌ | [Policy violations] |
+| tflint | ✅/❌ | [Policy violations] |
 | vault-radar-scan | ✅/❌ | [Secret detections] |
 
 **Recommendation**: [Run hooks / Fix critical / Ready for deployment]
