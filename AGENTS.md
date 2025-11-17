@@ -28,8 +28,8 @@ You are a specialized Terraform agent that follows a strict spec-driven developm
 | 6 | `/review-tf-design` | Review and approve design | Approval confirmation |
 | 7 | `/speckit.tasks` | Generate implementation tasks | `tasks.md` |
 | 8 | `/speckit.analyze` | Validate consistency | Analysis report |
-| 9 | `/speckit.implement`| Generate Terraform code and test deployment in sandbox workspace using terraform plan |
-| 10| Deploy to HCP Terraform | terraform apply |
+| 9 | `/speckit.implement`| Generate Terraform code and test deployment (terraform init, terraform plan only) in sandbox workspace using Terraform CLI |
+| 10| Deploy to HCP Terraform | Run `terraform init`, `terraform plan`, `terraform apply` via CLI (NOT MCP create_run) |
 | 11 | `/report-tf-deployment` | Generate comprehensive deployment report
 | 12 | Cleanup | Queue destroy plan | Resources cleaned |
 
@@ -110,9 +110,10 @@ You are a specialized Terraform agent that follows a strict spec-driven developm
 1. Create Terraform files (`main.tf`, `variables.tf`, `outputs.tf`)
 2. Configure pre-commit hooks
 3. Fix security issues from linting
-4. Test in sandbox workspace using terraform init, terraform plan
-5. ensure sentinel output from plan is fully captured is output to file in spec folder/feature
-5. Document in README.md
+4. Test in sandbox workspace using Terraform CLI: `terraform init`, `terraform plan`
+5. Ensure sentinel output from plan is fully captured and output to file in spec folder/feature
+6. Document in README.md
+7. **Note**: Use Terraform CLI commands directly, not MCP create_run
 
 ### `/speckit.analyze` - Consistency Check
 
@@ -168,7 +169,7 @@ You are a specialized Terraform agent that follows a strict spec-driven developm
 
 ## Testing Framework
 
-### Ephemeral Workspace Requirements
+### Sandbox Workspace Requirements
 
 **Workspace Configuration**:
 - Pattern: `sandbox_<GITHUB_REPO_NAME>`
@@ -177,11 +178,12 @@ You are a specialized Terraform agent that follows a strict spec-driven developm
 - Project: User-specified sandbox project
 
 **Testing Process**:
-1. Create ephemeral workspace via MCP
+1. Create sandbox workspace via MCP (workspace creation only, not runs)
 2. Configure variables from `sandbox.auto.tfvars`
-3. Run `terraform init`, `validate`, `plan`,
-4. Docuement full plan output to file in the specs/<branch>/ and parse sentinel run to understand and fix security issues
-4. Analyze results and remediate issues
+3. Use Terraform CLI directly: `terraform init`, `terraform validate`, `terraform plan`
+4. Document full plan output to file in the specs/<branch>/ and parse sentinel run to understand and fix security issues
+5. Analyze results and remediate issues
+6. **IMPORTANT**: Never use MCP create_run - always use Terraform CLI to avoid configuration version errors
 
 ### Variable Management
 
@@ -199,6 +201,7 @@ You are a specialized Terraform agent that follows a strict spec-driven developm
 3. Run `terraform validate` after code generation
 4. Use subagents for quality evaluation
 5. Document all architectural decisions
+6. Use Terraform CLI (`terraform plan/apply`) for runs - NOT MCP create_run
 
 ### NEVER DO
 1. Generate code without `/speckit.implement`
