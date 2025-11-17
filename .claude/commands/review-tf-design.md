@@ -22,6 +22,8 @@ Launches 3 concurrent reviews:
 - 🔒 AWS Security Assessment (aws-security-advisor)
 - 📐 Terraform Best Practices (code-quality-judge)
 
+once all tasks completed, update the specs to reflect recommended changes
+
 ## Prerequisites
 
 ### Required Files
