@@ -65,13 +65,6 @@ RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
 # Install tflint
 # RUN curl -s https://raw.githubusercontent.com/terraform-linters/tflint/master/install_linux.sh | bash
 
-# Install tfsec
-# RUN TFSEC_VERSION=$(curl -s https://api.github.com/repos/aquasecurity/tfsec/releases/latest | grep tag_name | cut -d '"' -f 4 | sed 's/v//') \
-#     && wget https://github.com/aquasecurity/tfsec/releases/download/v${TFSEC_VERSION}/tfsec_${TFSEC_VERSION}_linux_${TARGETARCH}.tar.gz \
-#     && tar -xzf tfsec_${TFSEC_VERSION}_linux_${TARGETARCH}.tar.gz \
-#     && chmod +x tfsec \
-#     && mv tfsec /usr/local/bin/tfsec \
-#     && rm tfsec_${TFSEC_VERSION}_linux_${TARGETARCH}.tar.gz
 
 # Copy library scripts
 COPY library-scripts/*.sh /tmp/library-scripts/

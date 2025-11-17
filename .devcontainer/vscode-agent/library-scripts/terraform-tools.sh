@@ -66,10 +66,10 @@ tar -xzf /tmp/terraform-docs.tar.gz -C /tmp
 sudo mv /tmp/terraform-docs /usr/local/bin/
 rm -f /tmp/terraform-docs.tar.gz
 
-echo "Installing tfsec v${TFSEC_VERSION}..."
-curl -sSLo /tmp/tfsec "https://github.com/aquasecurity/tfsec/releases/download/v${TFSEC_VERSION}/tfsec-linux-${TARGETARCH}"
-sudo mv /tmp/tfsec /usr/local/bin/
-sudo chmod +x /usr/local/bin/tfsec
+# echo "Installing tfsec v${TFSEC_VERSION}..."
+# curl -sSLo /tmp/tfsec "https://github.com/aquasecurity/tfsec/releases/download/v${TFSEC_VERSION}/tfsec-linux-${TARGETARCH}"
+# sudo mv /tmp/tfsec /usr/local/bin/
+# sudo chmod +x /usr/local/bin/tfsec
 
 echo "Installing terrascan v${TERRASCAN_VERSION}..."
 curl -sSLo /tmp/terrascan.tar.gz "https://github.com/tenable/terrascan/releases/download/v${TERRASCAN_VERSION}/terrascan_${TERRASCAN_VERSION}_Linux_${TARGETARCH}.tar.gz"

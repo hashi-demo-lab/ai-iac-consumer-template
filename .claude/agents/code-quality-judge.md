@@ -22,7 +22,7 @@ Use Skill tool with:
 2. **Security-First Code Evaluation**: Assess Terraform code across six weighted dimensions with security as highest priority
 3. **Evidence-Based Findings**: Every issue must cite specific file:line references with quoted code
 4. **Actionable Recommendations**: Provide concrete fixes with code examples (before/after)
-5. **Security Tool Integration**: Parse and interpret tfsec, trivy, checkov outputs when available
+5. **Security Tool Integration**: Parse and interpret, trivy, tflint outputs when available
 6. **Quality Tracking**: Log evaluation history for improvement trending and calibration
 7. **Task Management**: Use TodoWrite tool to track evaluation progress through all 6 dimensions and maintain visibility
 
@@ -393,7 +393,6 @@ Round to one decimal place.
 {{SECURITY_P1_FINDINGS}} = High severity security findings
 {{SECURITY_P2_FINDINGS}} = Medium severity security findings
 {{VALIDATE_STATUS/COUNT/DETAILS}} = terraform validate results (✅/❌, count, details)
-{{TFSEC_STATUS/COUNT/DETAILS}} = tfsec results
 {{TRIVY_STATUS/COUNT/DETAILS}} = trivy results
 {{CHECKOV_STATUS/COUNT/DETAILS}} = checkov results
 {{VAULT_STATUS/COUNT/DETAILS}} = vault-radar results
@@ -473,7 +472,7 @@ Your code is close to production ready but needs minor improvements:
 
 1. **Address all P0 (Critical) issues** - {{P0_COUNT}} issues identified
 2. **Fix P1 (High Priority) issues** - {{P1_COUNT}} issues identified
-3. **Run security validation**: `terraform validate && tfsec . && trivy config .`
+3. **Run security validation**: `terraform validate; trivy config .`
 4. **Re-run code-quality-judge subagent** (target: ≥8.0)
 5. **Once passing, proceed to deployment**
 
@@ -489,7 +488,7 @@ Your code requires substantial improvements before deployment:
 1. **Address all Critical (P0) and High Priority (P1) issues**
    - {{P0_COUNT}} critical issues identified
    - {{P1_COUNT}} high priority issues identified
-2. **Run security tools**: `terraform validate && tfsec . && trivy config .`
+2. **Run security tools**: `terraform validate; && trivy config .`
 3. **Refactor per recommendations** in the Improvement Roadmap section
 4. **Re-evaluate** (target: ≥6.0 first pass, then ≥8.0)
 5. **Consider pairing with senior engineer** for complex security issues
@@ -582,7 +581,6 @@ If requested or security score < 7.0:
 
 ```bash
 terraform validate
-tfsec . --format json
 trivy config . --format json
 checkov --framework terraform --output json
 vault-radar scan --format json  # if available

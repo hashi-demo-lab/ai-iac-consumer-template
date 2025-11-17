@@ -392,14 +392,6 @@ module "vpc" {
 ### 5.3 Testing and Validation
 **Standard**: Generated code MUST be validated before commit using automated Git pre-commit hooks.
 
-**Git Pre-commit Hook Configuration**:
-- Git pre-commit hook MUST be configured to update README using `terraform-docs` for automatic documentation generation
-- Git pre-commit hook MUST be configured to format code using `terraform fmt` for consistent code formatting
-- Git pre-commit hook MUST be configured to validate syntax using `terraform validate` for configuration validation
-- Git pre-commit hook MUST be configured with `tflint` to perform linting and identify configuration errors
-- Git pre-commit hook MUST be configured with `tfsec` to perform static code analysis for security vulnerabilities
-- pre-commit should not be bypassed unless the user has authorized
-
 **Validation Steps**:
 
 -  run `terraform init` or `terraform plan` using a cloud block to specify the workspace in your specified HCP terraform project

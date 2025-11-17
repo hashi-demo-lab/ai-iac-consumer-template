@@ -289,7 +289,7 @@ Validation checks:
 - [ ] Constitution & Plan Alignment score ≥ 8.0/10
 - [ ] Overall Code Quality Score ≥ 8.0/10
 - [ ] Zero CRITICAL (P0) security findings
-- [ ] All pre-commit hooks pass (tfsec, trivy, checkov)
+- [ ] All pre-commit hooks pass (trivy, tflint)
 
 ## Subagent Execution Strategy
 

@@ -77,7 +77,7 @@ Task tool:
 - Invoke via Task tool after `/speckit.implement` completes
 - Fully isolated context (objective evaluation)
 - Can run in parallel with deployment prep
-- Can trigger actual security tool execution (tfsec, trivy, checkov)
+- Can trigger actual security tool execution (trivy, tflint, checkov)
 - Interactive refinement options (auto-fix P0 issues)
 
 #### Enhanced `/speckit.analyze` ✅
