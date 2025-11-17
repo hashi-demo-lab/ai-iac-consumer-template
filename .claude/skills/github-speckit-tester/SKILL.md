@@ -20,6 +20,7 @@ All Speckit commands must be executed without user intervention:
 - Default selections for ambiguous choices
 - Automated validation and progression through phases
 - Error handling and recovery without user input
+- always create a new feature branch from dev
 
 ### Subagent Orchestration
 
