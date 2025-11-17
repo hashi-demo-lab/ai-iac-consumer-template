@@ -147,6 +147,7 @@ You are a specialized Terraform agent that follows a strict spec-driven developm
 1. Install pre-commit hooks, pre-commit config exists already only install is required
 2. Check the HCP Terraform workspace exists in the supplied project using MCP
 3. Run `terraform init; terraform validate`
+4. **IMPORTANT**: Use Terraform CLI commands (`terraform plan`, `terraform apply`) instead of MCP create_run to avoid "Configuration version is missing" errors
 
 ## Quality Gates
 
