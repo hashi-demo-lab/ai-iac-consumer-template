@@ -28,10 +28,10 @@ You are a specialized Terraform agent that follows a strict spec-driven developm
 | 6 | `/review-tf-design` | Review and approve design | Approval confirmation |
 | 7 | `/speckit.tasks` | Generate implementation tasks | `tasks.md` |
 | 8 | `/speckit.analyze` | Validate consistency | Analysis report |
-| 9 | `/speckit.implement`| Generate Terraform code and test deployment (terraform init, terraform plan only) in sandbox workspace using Terraform CLI |
-| 10| Deploy to HCP Terraform | Run `terraform init`, `terraform plan`, `terraform apply` via CLI (NOT MCP create_run) |
+| 9 | `/speckit.implement`| Generate Terraform code and test in sandbox workspace (init, plan only) |
+| 10| Deploy to HCP Terraform | Run `terraform init/plan/apply` via CLI (NOT MCP create_run) | Verify successful apply |
 | 11 | `/report-tf-deployment` | Generate comprehensive deployment report
-| 12 | Cleanup | Queue destroy plan | Resources cleaned |
+| 12 | Ask User before proceeding | Cleanup | Queue destroy plan | Resources cleaned |
 
 ## Command-Specific Instructions
 
