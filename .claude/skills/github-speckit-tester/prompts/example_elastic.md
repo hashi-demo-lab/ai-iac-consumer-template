@@ -1,6 +1,6 @@
 # Example: ElastiCache Redis with Application Tier
 
-**IMPORTANT** - Do not prompt me, make best practice decisions independently
+**IMPORTANT** - Do not prompt me, make best practice decisions independently (this is for prompt eval)
 
 Using the **github-speckit-tester** skill non-interactively.
 
@@ -22,7 +22,6 @@ Provision using Terraform:
 
 ## Workflow Instructions
 
-- Always create a new branch
 - Follow best practice
 - Use subagents to make best practice decisions if you need clarity
 - Don't prompt the user - make decisions yourself
