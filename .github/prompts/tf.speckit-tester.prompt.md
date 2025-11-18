@@ -41,6 +41,8 @@ The slash command prompts are available in the .github/prompts/ directory
 
 ### Execution Workflow
 
+**CRITICAL: All steps below must be executed in NON-INTERACTIVE MODE in the specified sequence. No action should be deferred. Each step must start automatically without requiring user confirmation upon completion of the previous step.**
+
 1. Prerequisites: Validate environment and credentials by running `.specify/scripts/bash/validate-env.sh`
 2. Run `/speckit.specify` prompt as per #file: .github/prompts/speckit.specify.prompt.md
 3. Run `/speckit.clarify` prompt as per #file: .github/prompts/speckit.clarify.prompt.md
