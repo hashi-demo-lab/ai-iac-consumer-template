@@ -30,4 +30,4 @@ When you discover new information that would be helpful for future development w
 ## Important use subagents liberally
 
 When performing any research concurrent subagents can be used for performance and isolation
-use subagents whenever you can and clear context between spec-kit phases using /clear
+use parrallel tool calls and tasks where possible

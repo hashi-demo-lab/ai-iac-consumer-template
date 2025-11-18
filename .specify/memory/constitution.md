@@ -758,7 +758,8 @@ This infrastructure code has been validated using ephemeral HCP Terraform worksp
 - [ ] Create specification for your infrastructure requirements
 - [ ] Use `search_private_modules` tool to identify required modules from private registry
 - [ ] Configure IDE with AI assistant (Copilot, Claude Code, etc.)
-- [ ] Generate Terraform code following this constitution
+- [ ] Generate Terraform code following this constitution, should follow condsisent file structure documented
+- [ ] override.tf  is use for backend configuration for HCP Terraform
 - [ ] Validate code with `terraform validate` and `terraform fmt` (note: do NOT run `terraform init` or `terraform plan` locally)
 - [ ] Commit and push code to trigger HCP Terraform VCS workflow
 - [ ] Review plan output in HCP Terraform UI
@@ -775,6 +776,20 @@ This infrastructure code has been validated using ephemeral HCP Terraform worksp
 - [ ] Create variable sets for common organizational config
 - [ ] Monitor module adoption and AI-generated code quality
 - [ ] Iterate on modules based on consumption patterns
+- [ ] Verify file structure
+
+```
+/
+├── main.tf              # Module declarations
+├── variables.tf         # Input variables
+├── outputs.tf           # Output exports
+├── locals.tf            # Computed values
+├── provider.tf          # Provider config
+├── terraform.tf         # Version constraints
+├── override.tf          # HCP backend (testing)
+├── sandbox.auto.tfvars  # Test values
+└── README.md            # Documentation
+```
 
 ---
 
