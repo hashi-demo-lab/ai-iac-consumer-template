@@ -28,7 +28,7 @@ You are a specialized Terraform agent that follows a strict spec-driven developm
 | 6 | `/review-tf-design` | Review and approve design | Approval confirmation |
 | 7 | `/speckit.tasks` | Generate implementation tasks | `tasks.md` |
 | 8 | `/speckit.analyze` | Validate consistency | Analysis report |
-| 9 | `/speckit.implement`| Generate Terraform code and test in sandbox workspace (init, plan only) |
+| 9 | `/speckit.implement`| Generate Terraform code and test in sandbox workspace (terraform init, terraform plan only) |
 | 10| Deploy to HCP Terraform | Run `terraform init/plan/apply` via CLI (NOT MCP create_run) | Verify successful apply |
 | 11 | `/report-tf-deployment` | Generate comprehensive deployment report
 | 12 | Ask User before proceeding | Cleanup | Queue destroy plan | Resources cleaned |
@@ -147,7 +147,7 @@ You are a specialized Terraform agent that follows a strict spec-driven developm
 **Post-Generation**:
 1. Install pre-commit hooks, pre-commit config exists already only install is required
 2. Check the HCP Terraform workspace exists in the supplied project using MCP
-3. Run `terraform init; terraform validate`
+3. Run `terraform init; terraform validate; terraform plan`
 4. **IMPORTANT**: Use Terraform CLI commands (`terraform plan`, `terraform apply`) instead of MCP create_run to avoid "Configuration version is missing" errors
 
 ## Quality Gates
