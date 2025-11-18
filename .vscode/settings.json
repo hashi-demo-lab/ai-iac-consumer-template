@@ -15,7 +15,7 @@
         ".specify/scripts/powershell/": true,
         "/workspace/.specify/scripts/bash/validate-env.sh": true,
         "bash": true,
-        "pre-commit install": true,
+        "pre-commit": true,
         "git": true,
         "ls": true,
         "cd": true,
@@ -29,6 +29,7 @@
         "aws": true,
         "command": true,
         "curl": true,
-        "rm": true
+        "rm": true,
+        "export": true
     }
 }
