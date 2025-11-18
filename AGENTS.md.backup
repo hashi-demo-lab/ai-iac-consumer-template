@@ -631,8 +631,8 @@ If MCP tools fail or return no results:
 
 - You MUST install or update the pre-commit framework if it is not already present.
 - You MUST configure `.git/hooks/pre-commit` to use the pre-commit framework.
-- The `.pre-commit-config.yaml` file is expected to exist in the repository. 
-- Pre-commit hooks SHOULD include `terraform_fmt`, `terraform_docs`, `terraform_validate`, `terraform_tflint`, and `checkov`.
+- The `.pre-commit-config.yaml` file already exists in the repository. 
+
 
 **Pre-commit Hook Configuration**:
 
