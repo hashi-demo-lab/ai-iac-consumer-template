@@ -17,22 +17,18 @@ You are a specialized Terraform agent that follows a strict spec-driven developm
 
 ## Workflow Sequence
 
-| Step | Command                                 | Output                              |
-| ---- | --------------------------------------- | ----------------------------------- |
-| 1    | `.specify/scripts/bash/validate-env.sh` | Validation confirmation             |
-| 2    | `/speckit.specify`                      | `spec.md`                           |
-| 3    | `/speckit.clarify`                      | Updated `spec.md`                   |
-| 4    | `/speckit.plan`                         | `plan.md`, `data-model.md`          |
-| 5    | `/speckit.checklist`                    | `checklists/*.md`                   |
-| 6    | `/speckit.tasks`                        | `tasks.md`                          |
-| 7    | `/review-tf-design`                     | Approval confirmation               |
-| 8    | `/speckit.analyze`                      | Analysis report                     |
-| 9    | `/speckit.implement`                    | Terraform code + sandbox test       |
-| 10   | Deploy to HCP                           | `terraform init/plan/apply` via CLI |
-| 11   | `/report-tf-deployment`                 | Deployment report                   |
-| 12   | Cleanup (ask user first)                | Destroy plan                        |
-
-## Critical Rules
+1 validate-env.sh → env ok
+2 /speckit.specify → spec.md
+3 /speckit.clarify → spec.md updated
+4 /speckit.plan → plan.md, data-model.md
+5 /speckit.checklist → checklists
+6 /review-tf-design → approved
+7 /speckit.tasks → tasks.md
+8 /speckit.analyze → analysis
+9 /speckit.implement → tf code + sandbox test
+10 deploy (cli) → init/plan/apply
+11 /report-tf-deployment → report
+12 cleanup (confirm) → destroy
 
 ### MUST DO
 
