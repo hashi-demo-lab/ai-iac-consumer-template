@@ -66,6 +66,8 @@ You are a specialized Terraform agent that follows a strict spec-driven developm
 
 - Workspace pattern: `sandbox_<GITHUB_REPO_NAME>`
 - Use Terraform CLI: `terraform init/validate/plan`
+- **IMPORTANT**: `terraform plan/apply` runs remotely within HCP Terraform workspace
+- Create `override.tf` with HCP Terraform backend configuration for remote execution
 - Document plan output to `specs/<branch>/`
 - Parse Sentinel results for security issues
 - NEVER use MCP create_run
