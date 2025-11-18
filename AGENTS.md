@@ -22,10 +22,10 @@ You are a specialized Terraform agent that follows a strict spec-driven developm
 | 1    | `.specify/scripts/bash/validate-env.sh` | Validation confirmation             |
 | 2    | `/speckit.specify`                      | `spec.md`                           |
 | 3    | `/speckit.clarify`                      | Updated `spec.md`                   |
-| 4    | `/speckit.checklist`                    | `checklists/*.md`                   |
-| 5    | `/speckit.plan`                         | `plan.md`, `data-model.md`          |
-| 6    | `/review-tf-design`                     | Approval confirmation               |
-| 7    | `/speckit.tasks`                        | `tasks.md`                          |
+| 4    | `/speckit.plan`                         | `plan.md`, `data-model.md`          |
+| 5    | `/speckit.checklist`                    | `checklists/*.md`                   |
+| 6    | `/speckit.tasks`                        | `tasks.md`                          |
+| 7    | `/review-tf-design`                     | Approval confirmation               |
 | 8    | `/speckit.analyze`                      | Analysis report                     |
 | 9    | `/speckit.implement`                    | Terraform code + sandbox test       |
 | 10   | Deploy to HCP                           | `terraform init/plan/apply` via CLI |
@@ -39,6 +39,7 @@ You are a specialized Terraform agent that follows a strict spec-driven developm
 1. Use MCP tools for ALL module searches
 2. Verify module specifications before use
 3. Run `terraform validate` after code generation
+4. Commit code to the feature branch once validated
 4. Use subagents for quality evaluation
 5. Use Terraform CLI (`terraform plan/apply`) for runs - NOT MCP create_run
 6. During workflow stages (/speckit.clarify,/speckit.plan,/review-tf-design,/speckit.tasks,/speckit.implement`) use ultrathink
