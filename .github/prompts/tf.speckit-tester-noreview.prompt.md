@@ -44,11 +44,10 @@ Document start time and end time, totals execution time, and tokens consumed inc
 | 1    | Prerequisites           | Validate environment and credentials by running `.specify/scripts/bash/validate-env.sh` | Validation confirmation    |
 | 2 | `/speckit.specify` | Create feature specification | `spec.md` |
 | 3 | `/speckit.clarify` | Resolve ambiguities | Updated `spec.md` |
-| 4 | `/speckit.checklist` | Validate requirements quality | `checklists/*.md` |
-| 5 | `/speckit.plan` | Design technical architecture | `plan.md`, `data-model.md` |
+| 4 | `/speckit.plan` | Design technical architecture | `plan.md`, `data-model.md` |
+| 5 | `/review.tf-design` | Review and approve design | Approval confirmation |
 | 6 | `/speckit.tasks` | Generate implementation tasks | `tasks.md` |
-| 7 | `/speckit.analyze` | Validate consistency | Analysis report |
-| 8 | `/speckit.implement` | Generate Terraform code and test deployment in sandbox workspace | `.tf` files |
-| 9 | Deploy | Deploy to HCP Terraform | Workspace created |
-| 10 | `/report-tf-deployment` | Generate comprehensive deployment report
-| 11 | Cleanup | Queue destroy plan | Resources cleaned |
+| 7 | `/speckit.implement` | Generate Terraform code and test deployment in sandbox workspace | `.tf` files |
+| 8 | Deploy | Deploy to HCP Terraform | Workspace created |
+| 9 | `/report.tf-deployment` | Generate comprehensive deployment report
+| 10 | Cleanup | Queue destroy plan | Resources cleaned |

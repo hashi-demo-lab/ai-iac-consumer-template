@@ -46,10 +46,10 @@ Document start time and end time, totals execution time, and tokens consumed inc
 | 3 | `/speckit.clarify` | Resolve ambiguities | Updated `spec.md` |
 | 4 | `/speckit.checklist` | Validate requirements quality | `checklists/*.md` |
 | 5 | `/speckit.plan` | Design technical architecture | `plan.md`, `data-model.md` |
-| 6 | `/review-tf-design` | Review and approve design | Approval confirmation |
+| 6 | `/review.tf-design` | Review and approve design | Approval confirmation |
 | 7 | `/speckit.tasks` | Generate implementation tasks | `tasks.md` |
 | 8 | `/speckit.analyze` | Validate consistency | Analysis report |
 | 9 | `/speckit.implement` | Generate Terraform code and test deployment in sandbox workspace | `.tf` files |
 | 10 | Deploy | Deploy to HCP Terraform | Workspace created |
-| 11 | `/report-tf-deployment` | Generate comprehensive deployment report
+| 11 | `/report.tf-deployment` | Generate comprehensive deployment report
 | 12 | Cleanup | Queue destroy plan | Resources cleaned |
