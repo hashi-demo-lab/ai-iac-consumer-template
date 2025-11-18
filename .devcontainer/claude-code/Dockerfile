@@ -3,7 +3,7 @@ FROM node:20
 ARG TZ
 ENV TZ="$TZ"
 # Set versions as arguments
-ARG TERRAFORM_VERSION="1.13.4"
+ARG TERRAFORM_VERSION="1.13.5"
 ARG TERRAFORM_DOCS_VERSION="0.20.0"
 ARG TFSEC_VERSION="1.28.14"
 ARG TERRASCAN_VERSION="1.19.9"
@@ -117,7 +117,7 @@ COPY library-scripts/*.sh /tmp/library-scripts/
 RUN chmod +x /tmp/library-scripts/*.sh
 
 # Install cloud CLI tools
-RUN /tmp/library-scripts/cloud-cli-tools.sh
+#RUN /tmp/library-scripts/cloud-cli-tools.sh
 
 RUN /tmp/library-scripts/terraform-tools.sh \
     "${TERRAFORM_VERSION}" \

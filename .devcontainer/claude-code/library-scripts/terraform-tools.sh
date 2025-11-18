@@ -4,7 +4,7 @@ set -e
 # This script installs Terraform and related tools
 
 # Versions
-TERRAFORM_VERSION=${1:-"1.13.4"}
+TERRAFORM_VERSION=${1:-"1.13.5"}
 TERRAFORM_DOCS_VERSION=${2:-"0.20.0"}
 TFSEC_VERSION=${3:-"1.28.14"}
 TERRASCAN_VERSION=${4:-"1.19.9"}
@@ -96,6 +96,7 @@ sudo -u node mkdir -p /home/node/.local/bin
 # We'll do this in the Dockerfile after switching to node user
 
 echo "Installing Trivy..."
+sudo apt-get update
 sudo apt-get install -y wget apt-transport-https gnupg lsb-release
 wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | sudo apt-key add -
 echo deb https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main | sudo tee -a /etc/apt/sources.list.d/trivy.list
