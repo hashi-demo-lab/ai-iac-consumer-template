@@ -1,3 +1,3 @@
 ---
-agent: review-tf-design
+agent: review.tf-design
 ---
