@@ -13,7 +13,7 @@ Provision using Terraform:
 - CloudWatch alarms
 - AWS Region: `ap-southeast-2`
 - Environment: Development (minimal cost)
-- Use existing default VPC
+- Use existing default VPC always
 
 ## HCP Terraform Configuration
 

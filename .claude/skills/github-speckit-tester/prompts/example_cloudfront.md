@@ -15,6 +15,7 @@ Provision using Terraform:
 - AWS Region: `us-east-1` (CloudFront requires ACM certs in us-east-1)
 - S3 bucket region: `ap-southeast-2`
 - Environment: Development (minimal cost)
+- Use existing default VPC always
 
 ## HCP Terraform Configuration
 
