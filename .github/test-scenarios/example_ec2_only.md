@@ -7,7 +7,9 @@ Using the **github-speckit-tester** skill non-interactively.
 ## Infrastructure Requirements
 
 Provision using Terraform:
-- A single EC2 instance accessible via SSH using username and password
+- A single EC2 instance accessible via SSH
+- SSH server should be configured to allow access using username/password. 
+- No SSH private/public key access is required. 
 - AWS Region: `ap-southeast-1`
 - Use existing default VPC
 - enviromnment development minimal cost

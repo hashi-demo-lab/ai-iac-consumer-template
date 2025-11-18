@@ -5,59 +5,53 @@ tools: ["edit", "search", "runCommands", "fetch", "runTasks", "runSubagent", "pr
 color: purple
 ---
 
-# Generate Terraform Deployment Report
+# Terraform Deployment Report Generator
 
-Create a comprehensive deployment report using the template at `/workspace/.specify/templates/deployment-report-template.md`.
+<agent_role>
+Generate deployment reports using `/workspace/.specify/templates/deployment-report-template.md`. Collect data, replace {{PLACEHOLDERS}}, validate completeness. Never guess—use "N/A" if unavailable.
+</agent_role>
 
-## Setup
+<workflow>
+**Setup**: `BRANCH=$(git branch --show-current); REPORT_FILE="specs/${BRANCH}/reports/deployment_$(date +%Y%m%d-%H%M%S).md"`
 
-```bash
-BRANCH=$(git rev-parse --abbrev-ref HEAD)
-REPORT_DIR="/workspace/specs/${BRANCH}/reports"
-mkdir -p "${REPORT_DIR}"
-TIMESTAMP=$(date +"%Y-%m-%d_%H-%M-%S")
-REPORT_FILE="${REPORT_DIR}/deployment_report_${TIMESTAMP}.md"
-```
+**Collect Data**:
+- Architecture: `specs/${BRANCH}/plan.md`
+- Modules: Parse `*.tf` for sources, versions, classify private vs public
+- Git: `git log -1 --format='%H|%an|%ae'`, `git diff --stat main...HEAD`
+- HCP: MCP `get_workspace_details`, `list_runs`, `get_run_details`
+- Security: `trivy config .`, `tflint`, `vault-radar-scan`, Sentinel from MCP
+- Tokens: Parse agent logs for usage by phase
+- Workarounds: Review code for tech debt vs fixes
 
-## Data Collection
+**Generate**: Read template → Replace all {{PLACEHOLDERS}} → Validate none remain → Write ${REPORT_FILE}
 
-**Architecture**: Read `specs/${BRANCH}/plan.md`, summarize components and diagram
+**Output**: Display path, key metrics (tokens, resources, security), critical issues, workarounds
+</workflow>
 
-**HCP Terraform**: Org/project/workspace names, workspace URL, configuration details
+<critical_sections>
+**Workarounds vs Fixes**: Distinguish tech debt (workarounds) from resolved issues (fixes). For workarounds: what, why, impact, priority, effort.
+**Security**: Categorize by severity (Critical/High/Medium/Low), include file:line, status (Fixed/Workaround/Not Addressed).
+**Modules**: Classify private registry vs public, include justification for public modules.
+</critical_sections>
 
-**Modules**: Parse `*.tf` for sources, distinguish private vs public, include versions and justifications
+<data_collection>
+- Architecture: Extract from `plan.md` (components, diagram)
+- Modules: Parse `*.tf` for `source =`, classify private (`app.terraform.io`) vs public
+- Git: `git log -1`, `git diff --stat main...HEAD`
+- HCP: MCP `get_workspace_details`, `list_runs`, `get_run_details` for Sentinel
+- Security: `trivy config .`, `tflint`, `vault-radar-scan` (parse JSON)
+- Tokens: Sum from agent logs by phase
+- Workarounds: Code review for what was worked around vs fixed
+</data_collection>
 
-**Git**: Branch, commit SHA, author, files changed, lines +/-, PR info
+<validation>
+✓ No {{PLACEHOLDER}} remains (use "N/A" if unavailable)
+✓ Workarounds documented with priority
+✓ Security findings complete with severity
+✓ Module compliance calculated
+✓ File path displayed to user
+</validation>
 
-**Agent Token Usage**: extract totals and breakdown across all phases
+## Context
 
-**AI Agent Tool Calls**: Review Tool calls stats and failures, document remediations, categorize by type
-
-**Agents**: List all subagent calls (speckit.*, code-quality-judge, etc.) and skills with purpose/outcome
-
-**Workarounds vs Fixes**: CRITICAL - itemize what was worked around vs fixed, explain why, prioritize future fixes
-
-**Security**: Collect results from:
-- `trivy config .`
-- `tflint`
-- `vault-radar-scan .`
-Categorize by severity, document remediation status
-
-**Sentinel**: Query workspace for policy results, document advisories and failures
-
-## Output
-
-1. Read template, replace all `{{PLACEHOLDERS}}` with actual data
-2. Use "N/A" if data unavailable - DO NOT GUESS
-3. Use tables for structured data, code blocks for logs
-4. Write to `${REPORT_FILE}`
-5. Display: file path, key metrics (tokens, resources, security score), critical issues, next steps
-
-## Success Criteria
-
-- All required sections populated
-- No `{{PLACEHOLDER}}` variables remain
-- Workarounds vs fixes clearly distinguished
-- Security scans fully documented
-- Token/tool statistics accurate
-- Proper markdown formatting
+$ARGUMENTS
