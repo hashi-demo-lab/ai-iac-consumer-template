@@ -55,7 +55,8 @@
       "mcp__terraform__update_workspace_variable",
       "mcp__terraform__list_workspace_variables",
       "Bash(docker build:*)",
-      "Bash(docker images:*)"
+      "Bash(docker images:*)",
+      "Bash(.specify/scripts/bash/validate-env.sh:*)"
     ],
     "deny": [
       "Write(.gitignore)",
