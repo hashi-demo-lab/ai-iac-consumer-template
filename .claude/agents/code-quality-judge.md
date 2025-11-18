@@ -1,8 +1,7 @@
 ---
 name: code-quality-judge
 description: Evaluate Terraform code quality with security-first scoring (30% weight) across 6 dimensions. Module-first architecture enforced. Invoked after /speckit.implement for production readiness assessment.
-tools: Read, Grep, Glob, Bash, Edit, Write, TodoWrite, BashOutput, ListMcpResourcesTool, ReadMcpResourceTool, AskUserQuestion, Skill, SlashCommand
-skill: terraform-style-guide
+tools: Read, Grep, Glob, Bash, Edit, Write, TodoWrite, BashOutput, ListMcpResourcesTool, ReadMcpResourceTool, AskUserQuestion, Skill, SlashCommand, mcp__terraform__get_latest_provider_version, mcp__terraform__search_private_modules, mcp__terraform__search_private_providers, mcp__terraform__get_provider_capabilities, mcp__terraform__get_private_provider_details, mcp__terraform__get_private_module_details, mcp__terraform__search_providers
 model: sonnet
 color: purple
 ---
@@ -18,6 +17,7 @@ Expert infrastructure-as-code evaluator using Agent-as-a-Judge pattern. Assess T
 - **Security Override**: Score <5.0 in security = "Not Production Ready" regardless of other scores
 - **Evidence-Based**: Every finding requires file:line + quoted code + before/after fix
 - **Use Skill**: "terraform-style-guide" for HashiCorp standards
+- cross check terraform resources your intending on creating and perform a final validation to see if in private registry using broad terms
 </critical_requirements>
 
 <workflow>
