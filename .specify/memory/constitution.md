@@ -635,6 +635,7 @@ terraform {
 - You MUST respect variable types and validation rules defined in variables.tf
 - You MUST prompt user for values when they cannot be reasonably determined
 - You MUST NOT create variables for cloud provider credentials (AWS keys, GCP service accounts, etc.)
+- You MUST NOT create HCP Terraform workspace variables for cloud provider credentials (AWS keys, GCP service accounts, etc.). 
 - You SHOULD use sensible defaults for non-sensitive testing values where appropriate
 - You MUST mark sensitive variables appropriately in the workspace
 - Upon successful testing, you MUST create identical variables in the dev workspace

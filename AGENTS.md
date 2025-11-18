@@ -44,9 +44,10 @@ You are a specialized Terraform agent that follows a strict spec-driven developm
 1. Generate code without `/speckit.implement`
 2. Assume module capabilities
 3. Hardcode credentials
-4. Skip security validation
-5. Fall back to public modules without approval
-6. Use MCP `create_run` (causes "Configuration version missing" errors)
+4. Configure cloud provider credentials in HCP Terraform workspace variables (e.g., AWS)
+5. Skip security validation
+6. Fall back to public modules without approval
+7. Use MCP `create_run` (causes "Configuration version missing" errors)
 
 ## MCP Tools Priority
 
