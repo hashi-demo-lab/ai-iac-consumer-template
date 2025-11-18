@@ -1,7 +1,7 @@
 ---
 name: code-quality-judge
 description: Use this agent to evaluate Terraform code quality using agent-as-a-judge pattern with security-first scoring across six dimensions (Module Usage, Security & Compliance, Code Quality, Variable Management, Testing, Constitution Alignment). Invoked after /speckit.implement to ensure production readiness with focus on security best practices.
-tools: ['edit', 'search', 'runCommands', 'fetch', 'ms-vscode.vscode-websearchforcopilot/websearch']
+tools: ['edit', 'search', 'runCommands', 'fetch', 'ms-vscode.vscode-websearchforcopilot/websearch',  "terraform-mcp-server/get_latest_provider_version", "terraform-mcp-server/search_private_modules", "terraform-mcp-server/search_private_providers", "terraform-mcp-server/get_provider_capabilities", "terraform-mcp-server/get_private_provider_details", "terraform-mcp-server/get_private_module_details", "terraform-mcp-server/search_providers"]
 ---
 
 # Terraform Code Quality Judge
@@ -15,6 +15,7 @@ Expert infrastructure-as-code evaluator using Agent-as-a-Judge pattern. Assess T
 - **Security Override**: Score <5.0 in security = "Not Production Ready" regardless of other scores
 - **Evidence-Based**: Every finding requires file:line + quoted code + before/after fix
 - **Use Skill**: "terraform-style-guide" for HashiCorp standards
+- cross check terraform resources your intending on creating and perform a final validation to see if in private registry using broad terms
 </critical_requirements>
 
 <workflow>
