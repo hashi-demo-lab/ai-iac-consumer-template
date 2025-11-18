@@ -8,6 +8,7 @@ Using the **github-speckit-tester** skill non-interactively.
 
 Provision using Terraform:
 - S3 bucket for static content storage
+- create a basic static content page for testing only
 - CloudFront distribution with OAI (Origin Access Identity)
 - SSL/TLS certificate via ACM
 - Route53 DNS records (optional)
