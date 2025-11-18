@@ -16,32 +16,24 @@
 	// "forwardPorts": [],
 
 	// Use 'postCreateCommand' to run commands after the container is created.
-	// "postCreateCommand": "uname -a",
+  "postCreateCommand": "bash -c 'mkdir -p ~/.terraform.d && cat > ~/.terraform.d/credentials.tfrc.json << EOF\n{\n  \"credentials\": {\n    \"app.terraform.io\": {\n      \"token\": \"${TFE_TOKEN}\"\n    }\n  }\n}\nEOF'",
 
 	// Configure tool-specific properties.
 "customizations": {
     "vscode": {
       "extensions": [
-        "ms-vscode.vscode-json",
-        "redhat.vscode-yaml",
 				"GitHub.copilot",
 				"GitHub.copilot-chat",
-        "ms-vscode.vscode-eslint",
+        "hashicorp.terraform",
+        "dbaeumer.vscode-eslint",
         "esbenp.prettier-vscode",
-        "HashiCorp.HCL",
-        "hashicorp.terraform"
+        "hashicorp.terraform",
+        "redhat.vscode-yaml",
+        "HashiCorp.HCL"
       ],
       "mcp": {
         "servers": {
-          // "github-mcp": {
-          //   "type": "http",
-          //   "url": "https://api.githubcopilot.com/mcp/"
-          // },
-          // "terraform": {
-          //   "type": "stdio",
-          //   "command": "/usr/local/bin/terraform-mcp-server"
-          // }
-          "terraform": {
+          "terraform-mcp": {
             "command": "docker",
             "args": [
               "run",
@@ -52,7 +44,7 @@
               "hashicorp/terraform-mcp-server"
             ]
           },
-          "aws-knowledge-mcp-server": {
+          "aws-knowledge-mcp": {
             "url": "https://knowledge-mcp.global.api.aws",
             "type": "http"
           }                      

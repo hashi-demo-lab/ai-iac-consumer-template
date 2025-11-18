@@ -11,6 +11,11 @@ A comprehensive test harness for validating the Speckit workflow system by execu
 
 This skill provides automated testing capabilities for the complete Speckit pipeline, executing all commands in sequence from specification to implementation without requiring user interaction.
 
+## Test Scenario
+Please read the following file to load the test scenario:
+#file: github/test-scenarios/${input:scenario}
+
+
 ## Core Concepts
 
 ### Non-Interactive Execution
