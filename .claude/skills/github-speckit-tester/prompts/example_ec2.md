@@ -8,6 +8,7 @@ Using the **github-speckit-tester** skill non-interactively.
 
 Provision using Terraform:
 - EC2 instances across 2 AZs
+- create basic static content page for testing
 - HTTPS and Nginx
 - ALB (Application Load Balancer)
 - AWS Region: `ap-southeast-2`

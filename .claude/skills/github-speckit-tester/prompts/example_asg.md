@@ -9,6 +9,7 @@ Using the **github-speckit-tester** skill non-interactively.
 Provision using Terraform:
 - Auto-scaling group with launch template
 - Target tracking policies
+- create basic static content for testing
 - ALB with health checks across 2 AZs
 - CloudWatch dashboards
 - AWS Region: `ap-southeast-2`
