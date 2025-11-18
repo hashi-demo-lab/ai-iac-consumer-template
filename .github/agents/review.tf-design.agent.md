@@ -1,15 +1,13 @@
 ---
 description: Review plan.md for AWS security and Terraform best practices
-handoffs: 
-  - label: AWS Security Advisor
-    agent: aws-security-advisor
-    prompt: Output security issues with risk levels to `specs/{FEATURE}/evaluations/aws-security-review.md`
-    send: true
-  - label: Code Quality Judge
-    agent: code-quality-judge
-    prompt: Check modules, variables, file structure, state management. Output best practice issues to `specs/{FEATURE}/evaluations/terraform-best-practices-review.md`
-    send: true  
 ---
+Run 2 subagents in parallel to review plan.md:
+
+
+Run /aws-security-advisor with input "Output security issues with risk levels to `specs/{FEATURE}/evaluations/aws-security-review.md`" using #runSubagent
+
+
+Run /code-quality-judge with input "Check modules, variables, file structure, state management. Output best practice issues to `specs/{FEATURE}/evaluations/terraform-best-practices-review.md`" using #runSubagent
 
 ## User Input
 
