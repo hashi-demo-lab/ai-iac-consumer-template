@@ -36,18 +36,20 @@ The test harness uses subagents to:
 - Maintain clean execution context per phase
 
 Document start time and end time, totals execution time, and tokens consumed inclusive of all subagents
+The custom agents are available in the .github/agents/ directory
+The slash command prompts are available in the .github/prompts/ directory
 
 ### Execution Workflow
 
 1. Prerequisites: Validate environment and credentials by running `.specify/scripts/bash/validate-env.sh`
-2. Run `/speckit.specify` prompt
-3. Run `/speckit.clarify` prompt
-4. Run `/speckit.checklist` prompt 
-5. Run `/speckit.plan` prompt 
-6. Run `/review.tf-design` prompt 
-7. Run `/speckit.tasks` prompt 
-8. Run `/speckit.analyze` prompt 
-9. Run `/speckit.implement` prompt 
+2. Run `/speckit.specify` prompt as per #file: .github/prompts/speckit.specify.prompt.md
+3. Run `/speckit.clarify` prompt as per #file: .github/prompts/speckit.clarify.prompt.md
+4. Run `/speckit.checklist` prompt as per #file: .github/prompts/speckit.checklist.prompt.md
+5. Run `/speckit.plan` prompt as per #file: .github/prompts/speckit.plan.prompt.md
+6. Run `/review.tf-design` prompt as per #file: .github/prompts/review.tf-design.prompt.md
+7. Run `/speckit.tasks` prompt as per #file: .github/prompts/speckit.tasks.prompt.md
+8. Run `/speckit.analyze` prompt as per #file: .github/prompts/speckit.analyze.prompt.md
+9. Run `/speckit.implement` prompt as per #file: .github/prompts/speckit.implement.prompt.md
 10. Deploy to HCP Terraform ephemeral workspace to test and validate the generated Terraform code
-11. Run `/report.tf-deployment` prompt 
+11. Run `/report.tf-deployment` prompt as per #file: .github/prompts/report.tf-deployment.prompt.md
 12. Destroy resources and cleanup, delete ephemeral workspace
