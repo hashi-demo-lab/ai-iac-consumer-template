@@ -53,7 +53,9 @@
       "Bash(sed:*)",
       "Bash(curl:*)",
       "mcp__terraform__update_workspace_variable",
-      "mcp__terraform__list_workspace_variables"
+      "mcp__terraform__list_workspace_variables",
+      "Bash(docker build:*)",
+      "Bash(docker images:*)"
     ],
     "deny": [
       "Write(.gitignore)",

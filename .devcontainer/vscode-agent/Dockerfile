@@ -1,104 +1,75 @@
-# syntax=docker/dockerfile:1.4
+FROM node:22-slim
 
-FROM mcr.microsoft.com/devcontainers/base:noble
+# Set all build arguments at once
+ARG TZ \
+    USERNAME=node \
+    TERRAFORM_VERSION="1.13.5" \
+    TERRAFORM_DOCS_VERSION="0.20.0" \
+    TFSEC_VERSION="1.28.14" \
+    TERRASCAN_VERSION="1.19.9" \
+    TFLINT_VERSION="0.59.1" \
+    TFLINT_AWS_RULESET_VERSION="0.23.1" \
+    TFLINT_AZURE_RULESET_VERSION="0.23.0" \
+    TFLINT_GCP_RULESET_VERSION="0.23.1" \
+    INFRACOST_VERSION="0.10.42" \
+    CHECKOV_VERSION="3.2.489" \
+    VAULT_RADAR_VERSION="0.36.0" \
+    INSTALL_VAULT_RADAR="true"
 
-# Configure apt for better reliability
-RUN echo 'Acquire::Retries "3";' > /etc/apt/apt.conf.d/80-retries \
-    && echo 'Acquire::http::Timeout "30";' >> /etc/apt/apt.conf.d/80-retries \
-    && echo 'Acquire::https::Timeout "30";' >> /etc/apt/apt.conf.d/80-retries
+# Install packages, configure locale, set up directories, and install GitHub Copilot in one layer
+# Note: node:22-slim requires ca-certificates for HTTPS operations
+RUN apt update && apt install -y \
+    ca-certificates less git procps sudo fzf zsh man-db unzip gnupg2 gh \
+    python3 python3-pip python3-venv python3-full \
+    jq curl locales wget software-properties-common && \
+    # Configure locale
+    sed -i 's/^# *en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen && \
+    locale-gen en_US.UTF-8 && \
+    update-locale LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8 && \
+    # Set up directories and permissions
+    mkdir -p /usr/local/share/npm-global /workspace && \
+    chown -R node:node /usr/local/share /workspace && \
+    # Install GitHub Copilot CLI
+    npm install -g @github/copilot && \
+    npm cache clean --force && \
+    # Clean up apt cache
+    rm -rf /var/lib/apt/lists/*
 
-# Install terraform CLI, tflint, terraform-docs, trivy
+# Set all environment variables at once
+ENV TZ="$TZ" \
+    LANG=en_US.UTF-8 \
+    LC_ALL=en_US.UTF-8 \
+    LANGUAGE=en_US:en \
+    NPM_CONFIG_PREFIX=/usr/local/share/npm-global \
+    PATH=/usr/local/share/npm-global/bin:/home/node/.local/bin:$PATH \
+    SHELL=/bin/bash
 
-# Set architecture variable
-# Set versions as arguments
-ARG TARGETARCH=arm64
-ARG TERRAFORM_VERSION="1.13.4"
-ARG TERRAFORM_DOCS_VERSION="0.20.0"
-ARG TFSEC_VERSION="1.28.14"
-ARG TERRASCAN_VERSION="1.19.9"
-ARG TFLINT_VERSION="0.59.1"
-ARG TFLINT_AWS_RULESET_VERSION="0.23.1"
-ARG TFLINT_AZURE_RULESET_VERSION="0.23.0"
-ARG TFLINT_GCP_RULESET_VERSION="0.23.1"
-ARG INFRACOST_VERSION="0.10.42"
-ARG CHECKOV_VERSION="3.2.489"
-ARG VAULT_RADAR_VERSION="0.36.0"
-ARG INSTALL_VAULT_RADAR="true"
+WORKDIR /workspace
 
-# Install required packages and clean up in same layer
-RUN apt-get update || (sleep 5 && apt-get update) || (sleep 10 && apt-get update) \
-    && apt-get install -y --no-install-recommends \
-    wget \
-    unzip \
-    curl \
-    gnupg \
-    git \
-    gh \
-    jq \
-    software-properties-common \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+# Configure sudo and install uv system-wide in one layer as root
+RUN groupadd -f wheel && \
+    usermod -aG wheel node && \
+    echo "%wheel ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers.d/wheel-group && \
+    chmod 0440 /etc/sudoers.d/wheel-group && \
+    # Install uv system-wide
+    curl -LsSf https://astral.sh/uv/install.sh | sh
 
-# Install Node.js and GitHub Copilot CLI in one layer
-RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
-    && apt-get install -y --no-install-recommends nodejs \
-    && npm install -g @github/copilot \
-    && npm cache clean --force \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
-
-# Install Terraform CLI
-# RUN wget -O- https://apt.releases.hashicorp.com/gpg | gpg --dearmor | tee /usr/share/keyrings/hashicorp-archive-keyring.gpg > /dev/null \
-#     && echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | tee /etc/apt/sources.list.d/hashicorp.list \
-#     && apt-get update \
-#     && apt-get install -y terraform \
-#     && rm -rf /var/lib/apt/lists/*
-
-# Install terraform-docs
-# RUN TERRAFORM_DOCS_VERSION=$(curl -s https://api.github.com/repos/terraform-docs/terraform-docs/releases/latest | grep tag_name | cut -d '"' -f 4) \
-#     && wget https://github.com/terraform-docs/terraform-docs/releases/download/${TERRAFORM_DOCS_VERSION}/terraform-docs-${TERRAFORM_DOCS_VERSION}-linux-${TARGETARCH}.tar.gz \
-#     && tar -xzf terraform-docs-${TERRAFORM_DOCS_VERSION}-linux-${TARGETARCH}.tar.gz \
-#     && chmod +x terraform-docs \
-#     && mv terraform-docs /usr/local/bin/ \
-#     && rm terraform-docs-${TERRAFORM_DOCS_VERSION}-linux-${TARGETARCH}.tar.gz
-
-# Install tflint
-# RUN curl -s https://raw.githubusercontent.com/terraform-linters/tflint/master/install_linux.sh | bash
-
-
-# Copy library scripts
+# Copy library scripts and set permissions as root
 COPY library-scripts/*.sh /tmp/library-scripts/
-# COPY ALPHA library files
-#COPY library-scripts/alpha/* /tmp/library-scripts/alpha/
 RUN chmod +x /tmp/library-scripts/*.sh
 
-# Install go
-# RUN GO_VERSION=1.21.3 \
-#     && wget https://go.dev/dl/go${GO_VERSION}.linux-${TARGETARCH}.tar.gz \
-#     && tar -xzf go${GO_VERSION}.linux-${TARGETARCH}.tar.gz \
-#     && mv go /usr/local/ \
-#     && rm go${GO_VERSION}.linux-${TARGETARCH}.tar.gz
+# Switch to node user for remaining installations
+USER node
 
-# Set Go environment variables
-# ENV PATH="/usr/local/go/bin:${PATH}"
-# ENV GOPATH="/go"
-# ENV PATH="${GOPATH}/bin:${PATH}"
-
-# Install terraform-mcp-server from source
-# RUN go install github.com/hashicorp/terraform-mcp-server/cmd/terraform-mcp-server@latest \
-#     && mv ${GOPATH}/bin/terraform-mcp-server /usr/local/bin/terraform-mcp-server
-
-USER vscode
-
-# Install all user tools in a single layer to reduce image size
-RUN curl -LsSf https://astral.sh/uv/install.sh | sh \
-    && echo 'export PATH=$HOME/.local/bin:$PATH' >> ~/.bashrc \
-    && $HOME/.local/bin/uv tool install pre-commit \
-    && $HOME/.local/bin/uv tool install specify-cli --from git+https://github.com/github/spec-kit.git \
-    && sudo mkdir -p /workspace \
-    && sudo chown -R $USER:$USER /workspace \
-    && /tmp/library-scripts/cloud-cli-tools.sh \
-    && /tmp/library-scripts/terraform-tools.sh \
+# Install uv for user, Python tools, and run library scripts in one layer
+RUN curl -LsSf https://astral.sh/uv/install.sh | sh && \
+    echo 'export PATH=$HOME/.local/bin:$PATH' >> ~/.bashrc && \
+    # Install Python tools
+    $HOME/.local/bin/uv tool install pre-commit && \
+    $HOME/.local/bin/uv tool install specify-cli --from git+https://github.com/github/spec-kit.git && \
+    # Install cloud CLI tools and terraform tools
+    #/tmp/library-scripts/cloud-cli-tools.sh && \
+    /tmp/library-scripts/terraform-tools.sh \
         "${TERRAFORM_VERSION}" \
         "${TERRAFORM_DOCS_VERSION}" \
         "${TFSEC_VERSION}" \
@@ -110,6 +81,6 @@ RUN curl -LsSf https://astral.sh/uv/install.sh | sh \
         "${INFRACOST_VERSION}" \
         "${CHECKOV_VERSION}" \
         "${VAULT_RADAR_VERSION}" \
-        "${INSTALL_VAULT_RADAR}" \
-    && sudo rm -rf /tmp/library-scripts
-
+        "${INSTALL_VAULT_RADAR}" && \
+    # Clean up
+    sudo rm -rf /tmp/library-scripts
