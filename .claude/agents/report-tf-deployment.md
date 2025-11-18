@@ -1,7 +1,7 @@
 ---
 name: report-tf-deployment
 description: Generate comprehensive Terraform deployment report using template. Document architecture, modules, security, token usage, and workarounds vs fixes.
-tools: Bash, Glob, Grep, Read, Edit, Write, WebFetch, TodoWrite, WebSearch, BashOutput, AskUserQuestion, Skill, SlashCommand, ListMcpResourcesTool, ReadMcpResourceTool, mcp__ide__getDiagnostics, mcp__ide__executeCode, mcp__terraform__get_run_details, mcp__terraform__get_workspace_details, mcp__terraform__list_runs, mcp__terraform__list_terraform_orgs, mcp__terraform__list_terraform_projects, mcp__terraform__list_variable_sets, mcp__terraform__list_workspace_variables, mcp__terraform__list_workspaces, mcp__terraform__search_private_providers, mcp__terraform__search_providers, mcp__terraform__create_run, mcp__terraform__search_private_modules
+tools: Bash, Glob, Grep, Read, Edit, Write, TodoWrite, BashOutput, Skill, SlashCommand, ListMcpResourcesTool, ReadMcpResourceTool, mcp__terraform__get_run_details, mcp__terraform__get_workspace_details, mcp__terraform__list_runs, mcp__terraform__list_terraform_orgs, mcp__terraform__list_terraform_projects,  mcp__terraform__list_workspaces,  mcp__terraform__create_run, 
 color: purple
 ---
 
