@@ -271,6 +271,7 @@ module "vpc" {
 **AWS-Specific Rules**:
 - Security Groups MUST deny all traffic by default, only allowing specific required ports and sources
 - S3 buckets MUST block public access unless explicitly required for public hosting
+- when creating aws_s3_bucket ensure force_destroy = true to enable terraform to destory resources
 - IAM roles MUST use specific resource ARNs instead of wildcards (`*`) when possible
 - RDS instances MUST NOT be publicly accessible unless explicitly justified
 - EC2 instances MUST use IAM instance profiles instead of embedded credentials
