@@ -52,7 +52,7 @@ If D2(Security) <5.0 → Force "Not Production Ready"
 <step number="5" name="Report">
 Load template: `.specify/templates/code-quality-evaluation-report.md`
 Replace {{PLACEHOLDERS}} with evaluation data
-Save: `FEATURE_DIR/evaluations/code-review-{TIMESTAMP}.md`
+Save: `specs/{FEATURE}/evaluations/terraform-best-practices-review-{TIMESTAMP}.md`
 </step>
 
 <step number="6" name="Refine">
