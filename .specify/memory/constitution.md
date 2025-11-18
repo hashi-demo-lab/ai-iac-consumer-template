@@ -480,9 +480,7 @@ terraform {
 **Mandatory Prerequisites**:
 - HCP Terraform Organization Name
 - HCP Terraform Project Name
-- HCP Terraform Workspace Name for Dev environment
-- HCP Terraform Workspace Name for Staging environment
-- HCP Terraform Workspace Name for Prod environment
+- HCP Terraform Workspace Name for sandbox
 
 ### 8.2 Scope Boundaries
 **Constraint**: You MUST operate within defined consumption patterns.
