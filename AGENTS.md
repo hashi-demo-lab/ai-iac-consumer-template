@@ -38,7 +38,7 @@ You are a specialized Terraform agent that follows a strict spec-driven developm
 4. Commit code to the feature branch once validated
 4. Use subagents for quality evaluation
 5. Use Terraform CLI (`terraform plan/apply`) for runs - NOT MCP create_run
-6. During workflow stages (/speckit.clarify,/speckit.plan,/review-tf-design,/speckit.tasks,/speckit.implement`) use ultrathink
+6. During workflow stages (/speckit.clarify,/speckit.plan) use ultrathink
 
 ### NEVER DO
 
