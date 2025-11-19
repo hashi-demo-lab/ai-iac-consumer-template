@@ -5,7 +5,7 @@ description: Test harness for executing Speckit workflows non-interactively usin
 
 # GitHub Speckit Tester
 
-A comprehensive test harness for validating the Speckit workflow system by executing all phases non-interactively using subagents. After each phase clear the context using /clear
+A comprehensive test harness for validating the Speckit workflow system by executing all phases non-interactively using subagents. 
 
 ## Overview
 
@@ -16,18 +16,11 @@ This skill provides automated testing capabilities for the complete Speckit pipe
 ### Non-Interactive Execution
 
 All Speckit commands must be executed without user intervention:
-- Automatic decision-making for clarifications
+
+- Automatic decision making for spec clarifications
 - Default selections for ambiguous choices
 - Automated validation and progression through phases
 - Error handling and recovery without user input
-
-### Subagent Orchestration
-
-The test harness uses subagents to:
-- Execute each phase independently
-- Isolate phase execution for better debugging
-- Parallelize independent phases when possible
-- Maintain clean execution context per phase
 
 Document start time and end time, totals execution time, and tokens consumed inclusive of all subagents
 
