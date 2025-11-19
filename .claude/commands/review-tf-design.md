@@ -1,13 +1,11 @@
 ---
-description: Review plan.md for AWS security and Terraform best practices
+description: perform parallel subagent reviews
 ---
 
-# run in parrallel
+Run 2 subagents at the same time review plan.md:
 
 subagent aws-security-advisor, @aws-security-advisor
 subagent code-quality-judge, @code-quality-judge
-
-updated spec based on subagent feedback
 
 ---
 
