@@ -18,7 +18,7 @@ ARG TZ \
 
 # Install packages, configure locale, set up directories, and install GitHub Copilot in one layer
 # Note: node:22-slim requires ca-certificates for HTTPS operations
-RUN apt update && apt install -y \
+RUN apt update && apt install -y --no-install-recommends \
     ca-certificates less git procps sudo fzf zsh man-db unzip gnupg2 gh \
     python3 python3-pip python3-venv python3-full \
     jq curl locales wget software-properties-common && \
