@@ -18,8 +18,8 @@ ARG TZ \
 
 # Install packages, configure locale, set up directories, and install delta in one layer
 # Note: node:20-slim requires ca-certificates for HTTPS operations
-RUN apt update && apt install -y \
-    ca-certificates less git procps sudo fzf zsh man-db unzip gnupg2 gh \
+RUN apt update && apt install -y --no-install-recommends \
+    ca-certificates less git procps sudo zsh man-db unzip gnupg2 gh \
     iptables ipset iproute2 dnsutils aggregate \
     python3 python3-pip python3-venv python3-full \
     jq curl locales wget && \
@@ -83,9 +83,6 @@ USER node
 # Install zsh theme, Claude, uv for user, and Python tools in one layer
 RUN sh -c "$(wget -O- https://github.com/deluan/zsh-in-docker/releases/download/v1.2.0/zsh-in-docker.sh)" -- \
         -p git \
-        -p fzf \
-        -a "source /usr/share/doc/fzf/examples/key-bindings.zsh" \
-        -a "source /usr/share/doc/fzf/examples/completion.zsh" \
         -a "export PROMPT_COMMAND='history -a' && export HISTFILE=/commandhistory/.bash_history" \
         -x && \
     npm install -g @anthropic-ai/claude-code && \
