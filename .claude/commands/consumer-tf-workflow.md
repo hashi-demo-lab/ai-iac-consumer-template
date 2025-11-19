@@ -13,4 +13,4 @@
 | 9 | `/speckit.implement`| Generate Terraform code and test in sandbox workspace (init, plan only) |
 | 10| Deploy to HCP Terraform | Run `terraform init/plan/apply` via CLI (NOT MCP create_run) | Verify successful apply |
 | 11 | `/report-tf-deployment` | Generate comprehensive deployment report
-| 12 | Ask User before proceeding | Cleanup | Queue destroy plan | Resources cleaned |
+| 12 | Ask User before proceeding | Cleanup | Queue destroy plan onyl if confirmed | Resources cleaned |

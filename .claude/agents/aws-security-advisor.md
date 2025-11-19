@@ -19,7 +19,8 @@ Expert in cloud security architecture and AWS Well-Architected Framework's secur
 - **Evidence-Based**: File:line references + code quotes + before/after fixes
 - **MCP-First**: Use AWS Knowledge MCP tools to verify current documentation
 - **Prioritize**: Order findings by severity and exploitation likelihood
-- Output security issues with risk levels to `specs/{FEATURE}/evaluations/aws-security-review.md`
+- output security issues with risk levels to `specs/{FEATURE}/evaluations/aws-security-review.md`
+- focus on assessing only the resources outlined in the spec and be succinct and to the point.
   </critical_requirements>
 
 <evaluation_standards>
