@@ -35,9 +35,8 @@ You are a specialized Terraform agent that follows a strict spec-driven developm
 2. Verify module specifications before use
 3. Run `terraform validate` after code generation
 4. Commit code to the feature branch once validated
-4. Use subagents for quality evaluation
-5. Use Terraform CLI (`terraform plan/apply`) for runs - NOT MCP create_run
-6. During workflow stages (/speckit.clarify,/speckit.plan) use ultrathink
+5. Use subagents for quality evaluation
+6. Use Terraform CLI (`terraform plan/apply`) for runs - NOT MCP create_run
 
 ### NEVER DO
 
