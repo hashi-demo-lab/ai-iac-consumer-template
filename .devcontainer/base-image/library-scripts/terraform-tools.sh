@@ -81,16 +81,18 @@ tar -xzf /tmp/infracost.tar.gz -C /tmp
 sudo mv /tmp/infracost-linux-amd64 /usr/local/bin/infracost
 rm -f /tmp/infracost.tar.gz
 
-echo "Installing pre-commit..."
-# Install pre-commit system-wide using uv
-uv tool install pre-commit --with pre-commit-uv
+# echo "Installing pre-commit..."
+# # Install pre-commit system-wide using uv
+# export UV_TOOL_BIN_DIR=/usr/local/bin
+# uv tool install pre-commit --with pre-commit-uv
+# uv tool install specify-cli --from git+https://github.com/github/spec-kit.git
 
 # Create a symlink so it's available system-wide
-sudo ln -sf ~/.local/bin/pre-commit /usr/local/bin/pre-commit
+# sudo ln -sf ~/.local/bin/pre-commit /usr/local/bin/pre-commit
 
 # Also make sure it's available to the node user by installing it for them too
 # First ensure the node user's .local directory exists
-sudo -u node mkdir -p /home/node/.local/bin
+# sudo -u node mkdir -p /home/node/.local/bin
 
 # Install pre-commit for the node user (this will work after uv is installed for node user)
 # We'll do this in the Dockerfile after switching to node user
