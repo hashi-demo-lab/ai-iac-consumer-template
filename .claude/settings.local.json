@@ -56,7 +56,9 @@
       "mcp__terraform__list_workspace_variables",
       "Bash(docker build:*)",
       "Bash(docker images:*)",
-      "Bash(.specify/scripts/bash/validate-env.sh:*)"
+      "Bash(.specify/scripts/bash/validate-env.sh:*)",
+      "WebFetch(domain:github.com)",
+      "Bash(npx ccstatusline@latest:*)"
     ],
     "deny": [
       "Write(.gitignore)",
