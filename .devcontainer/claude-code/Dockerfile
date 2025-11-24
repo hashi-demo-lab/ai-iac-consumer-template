@@ -63,10 +63,12 @@ RUN echo '{\
     "separatorInvertBackground": [\
       false\
     ],\
-    "startCaps": [],\
-    "endCaps": [],\
-    "autoAlign": false\
-  }\
+    "startCaps": [""],\
+    "endCaps": [""],\
+    "autoAlign": true,\
+    "theme": "gruvbox"\
+  },\
+  "defaultPadding": "     "\
 }' > /home/node/.config/ccstatusline/settings.json && \
     chown node:node /home/node/.config/ccstatusline/settings.json
 
