@@ -58,7 +58,8 @@
       "Bash(docker images:*)",
       "Bash(.specify/scripts/bash/validate-env.sh:*)",
       "WebFetch(domain:github.com)",
-      "Bash(npx ccstatusline@latest:*)"
+      "Bash(npx ccstatusline@latest:*)",
+      "Bash(npm run health:*)"
     ],
     "deny": [
       "Write(.gitignore)",

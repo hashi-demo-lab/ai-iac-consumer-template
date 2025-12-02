@@ -73,5 +73,5 @@ RUN echo '{\
     chown node:node /home/node/.config/ccstatusline/settings.json
 
 # Add clauded alias for claude -dangerously-skip-permissions
-RUN echo 'alias clauded="claude -dangerously-skip-permissions"' >> /home/node/.zshrc && \
+RUN echo 'alias clauded="claude --dangerously-skip-permissions"' >> /home/node/.zshrc && \
     chown node:node /home/node/.zshrc
