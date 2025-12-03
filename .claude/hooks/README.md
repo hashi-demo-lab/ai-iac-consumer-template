@@ -121,9 +121,10 @@ metadata.tokens_total > 10000      # High token usage
 
 | Variable               | Required | Default                         |
 | ---------------------- | -------- | ------------------------------- |
+| `LANGFUSE_HOOK_ENABLED`| Yes      | `false` (must be `true` or `1`) |
 | `LANGFUSE_PUBLIC_KEY`  | Yes      | -                               |
 | `LANGFUSE_SECRET_KEY`  | Yes      | -                               |
-| `LANGFUSE_HOST`        | No       | `https://cloud.langfuse.com`    |
+| `LANGFUSE_HOST`        | No       | `https://us.cloud.langfuse.com` |
 | `LANGFUSE_RELEASE`     | No       | `claude-code`                   |
 | `LANGFUSE_ENVIRONMENT` | No       | `development`                   |
 | `LANGFUSE_LOG_LEVEL`   | No       | (INFO, set `DEBUG` for verbose) |

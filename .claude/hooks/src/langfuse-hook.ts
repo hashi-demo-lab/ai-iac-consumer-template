@@ -4,9 +4,19 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { appendFileSync } from "node:fs";
 
-// Load .env from the hooks directory (not CWD)
+// Check enable flag BEFORE loading .env (so CLI can override)
 const __dirname = dirname(fileURLToPath(import.meta.url));
-config({ path: join(__dirname, "..", ".env"), override: true });
+const enabledFromEnv = process.env.LANGFUSE_HOOK_ENABLED;
+
+// Load .env from the hooks directory (not CWD) - don't override existing env vars
+config({ path: join(__dirname, "..", ".env") });
+
+// Early exit if hook is not enabled (check original env value or loaded value)
+const HOOK_ENABLED = (enabledFromEnv ?? process.env.LANGFUSE_HOOK_ENABLED) === "true" ||
+                     (enabledFromEnv ?? process.env.LANGFUSE_HOOK_ENABLED) === "1";
+if (!HOOK_ENABLED) {
+  process.exit(0);
+}
 
 // File-based debug logging (always enabled to diagnose hook invocation)
 const DEBUG_LOG_FILE = "/tmp/langfuse-hook-debug.log";
