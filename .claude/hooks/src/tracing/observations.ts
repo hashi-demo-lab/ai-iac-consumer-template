@@ -490,12 +490,14 @@ export function createToolObservation(
  * @param ctx - Tool context
  * @param traceparent - W3C traceparent string for context restoration
  * @param sessionId - Optional session ID to set on the trace (for cross-process sessions)
+ * @param parentObservationId - Optional parent observation ID for Langfuse hierarchy metadata
  * @returns A ToolObservation wrapper attached to the parent trace
  */
 export function createToolObservationWithContext(
   ctx: ToolContext,
   traceparent: string,
-  sessionId?: string
+  sessionId?: string,
+  parentObservationId?: string
 ): ToolObservation {
   // Parse traceparent to get parent span context for cross-process linking
   const parsedParent = parseTraceparent(traceparent);
@@ -511,6 +513,17 @@ export function createToolObservationWithContext(
     tool_use_id: ctx.toolUseId,
     cross_process: true, // Mark as cross-process for debugging
   };
+
+  // Add parent observation ID to metadata for Langfuse hierarchy debugging
+  // Note: The OTel parentSpanContext handles trace linking, but parentObservationId
+  // is stored in metadata for visibility since SDK v4 doesn't support native parentObservationId
+  if (parentObservationId) {
+    metadata.parent_observation_id = parentObservationId;
+  }
+  // Also extract parent span ID from traceparent as fallback for hierarchy tracking
+  if (parsedParent) {
+    metadata.parent_span_id = parsedParent.spanId;
+  }
 
   // Subagents get "agent" type for proper hierarchy visualization
   if (ctx.isSubagent) {
@@ -690,6 +703,10 @@ export interface UpsertObservationParams {
   parentSpanContext?: SpanContext;
   /** Observation type: agent or tool */
   observationType?: "agent" | "tool";
+  /** Parent observation ID for Langfuse hierarchy metadata */
+  parentObservationId?: string;
+  /** Token usage details for Langfuse cost tracking */
+  usageDetails?: Record<string, number>;
 }
 
 /**
@@ -725,10 +742,12 @@ export function upsertToolObservation(params: UpsertObservationParams): ToolObse
     sessionId,
     parentSpanContext,
     observationType = "tool",
+    parentObservationId,
+    usageDetails,
   } = params;
 
   // Build complete metadata with cross-process completion marker
-  const fullMetadata = {
+  const fullMetadata: Record<string, unknown> = {
     ...metadata,
     cross_process_completion: true,
     original_observation_id: id, // Link to the PreToolUse observation for correlation
@@ -737,11 +756,21 @@ export function upsertToolObservation(params: UpsertObservationParams): ToolObse
     duration_ms: endTime.getTime() - startTime.getTime(),
   };
 
+  // Add parent observation ID to metadata for Langfuse hierarchy debugging
+  if (parentObservationId) {
+    fullMetadata.parent_observation_id = parentObservationId;
+  }
+  // Also include parent span ID from span context for consistency
+  if (parentSpanContext) {
+    fullMetadata.parent_span_id = parentSpanContext.spanId;
+  }
+
   // Create a new observation with parent context for proper linking
-  // This creates a sibling to the PreToolUse observation but with complete result data
+  // Use the original name (not `:result` suffix) to avoid duplicate-looking entries
+  // The cross_process_completion metadata marker distinguishes this as the final observation
   // Note: We use type assertion to satisfy TypeScript while the runtime supports "agent"/"tool"
   const observation = observationType === "agent"
-    ? startObservation(`${name}:result`, {
+    ? startObservation(name, {
         output,
         metadata: fullMetadata,
         level,
@@ -750,7 +779,7 @@ export function upsertToolObservation(params: UpsertObservationParams): ToolObse
         asType: "agent" as const,
         parentSpanContext,
       })
-    : startObservation(`${name}:result`, {
+    : startObservation(name, {
         output,
         metadata: fullMetadata,
         level,
@@ -766,6 +795,17 @@ export function upsertToolObservation(params: UpsertObservationParams): ToolObse
       sessionId,
       name: "claude-code-session",
     });
+  }
+
+  // If we have usage details, set them directly on the OTel span
+  // This bypasses the TypeScript type limitation for agent/tool observations
+  if (usageDetails) {
+    const obs = observation as unknown as {
+      updateOtelSpanAttributes?: (attrs: Record<string, unknown>) => void;
+    };
+    if (typeof obs.updateOtelSpanAttributes === "function") {
+      obs.updateOtelSpanAttributes({ usageDetails });
+    }
   }
 
   // End the observation immediately (we're finalizing it)
@@ -799,13 +839,15 @@ export function upsertToolObservation(params: UpsertObservationParams): ToolObse
  * @param metadata - Event metadata
  * @param traceparent - W3C traceparent string for context restoration
  * @param sessionId - Optional session ID to set on the trace (for cross-process sessions)
+ * @param parentObservationId - Optional parent observation ID for Langfuse hierarchy metadata
  */
 export function recordEventWithContext(
   name: string,
   input?: unknown,
   metadata?: Record<string, unknown>,
   traceparent?: string,
-  sessionId?: string
+  sessionId?: string,
+  parentObservationId?: string
 ): void {
   if (!traceparent) {
     // No traceparent - create as root event (fallback)
@@ -822,11 +864,20 @@ export function recordEventWithContext(
     isRemote: true,
   } : undefined;
 
-  const eventMetadata = {
+  const eventMetadata: Record<string, unknown> = {
     ...metadata,
     timestamp: new Date().toISOString(),
     cross_process: true,
   };
+
+  // Add parent observation ID to metadata for Langfuse hierarchy debugging
+  if (parentObservationId) {
+    eventMetadata.parent_observation_id = parentObservationId;
+  }
+  // Also extract parent span ID from traceparent for hierarchy tracking
+  if (parsedParent) {
+    eventMetadata.parent_span_id = parsedParent.spanId;
+  }
 
   // Create event with parent span context for proper trace linking
   const observation = startObservation(name, {
@@ -849,7 +900,7 @@ export function recordEventWithContext(
  * @param observation - The observation to update
  * @param result - The tool result
  * @param ctx - Optional additional context
- * @param tokens - Optional token usage (stored in metadata since v4 SDK agent/tool types don't support usageDetails)
+ * @param tokens - Optional token usage
  */
 export function finalizeToolObservation(
   observation: ToolObservation,
@@ -883,23 +934,43 @@ export function finalizeToolObservation(
     if (ctx.subagentModel) metadata.subagent_model = ctx.subagentModel;
   }
 
-  // Add token usage to metadata if available
-  // Note: Langfuse SDK v4 agent/tool observation types don't support usageDetails
-  // (only generation type does), so we store tokens in metadata for visibility
+  // Build usageDetails for Langfuse if tokens are available
+  // Note: While TypeScript types for agent/tool don't include usageDetails,
+  // the underlying OTel implementation DOES support it via OBSERVATION_USAGE_DETAILS attribute.
+  // We pass usageDetails through the internal observation's updateOtelSpanAttributes method.
+  let usageDetails: Record<string, number> | undefined;
   if (tokens && (tokens.input || tokens.output || tokens.total)) {
+    usageDetails = {
+      input: tokens.input ?? 0,
+      output: tokens.output ?? 0,
+      total: tokens.total ?? ((tokens.input ?? 0) + (tokens.output ?? 0)),
+    };
+    // Also store in metadata for visibility as backup
     metadata.token_usage = {
-      input_tokens: tokens.input ?? 0,
-      output_tokens: tokens.output ?? 0,
-      total_tokens: tokens.total ?? ((tokens.input ?? 0) + (tokens.output ?? 0)),
+      input_tokens: usageDetails.input,
+      output_tokens: usageDetails.output,
+      total_tokens: usageDetails.total,
     };
   }
 
+  // Update the observation with result data
   observation.update({
     output: result.output,
     level,
     statusMessage: result.error,
     metadata,
   });
+
+  // If we have usage details, set them directly on the OTel span
+  // This bypasses the TypeScript type limitation for agent/tool observations
+  if (usageDetails && observation._observation) {
+    const obs = observation._observation as unknown as {
+      updateOtelSpanAttributes?: (attrs: Record<string, unknown>) => void;
+    };
+    if (typeof obs.updateOtelSpanAttributes === "function") {
+      obs.updateOtelSpanAttributes({ usageDetails });
+    }
+  }
 
   observation.end();
 }

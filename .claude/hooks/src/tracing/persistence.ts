@@ -26,8 +26,15 @@ const PENDING_PARENT_PREFIX = "pending-parent-";
 /** Maximum age for state files before cleanup (24 hours) */
 const MAX_AGE_MS = 24 * 60 * 60 * 1000;
 
-/** Maximum age for pending parent context (5 minutes - subagent should start quickly) */
+/** Maximum age for pending parent context for initial linking (5 minutes - subagent should start quickly) */
 const PENDING_PARENT_MAX_AGE_MS = 5 * 60 * 1000;
+
+/**
+ * Extended TTL for pending parent context to support long-running subagents.
+ * This is used for cleanup AFTER the subagent has started and is actively running.
+ * Long-running subagents (e.g., complex multi-step tasks) may run for 30+ minutes.
+ */
+const PENDING_PARENT_TTL_MS = 30 * 60 * 1000;
 
 /**
  * Extended SpanState with creation timestamp for cleanup purposes.
@@ -35,7 +42,14 @@ const PENDING_PARENT_MAX_AGE_MS = 5 * 60 * 1000;
 export interface PersistedSpanState extends SpanState {
   /** Timestamp when the state was created (ms since epoch) */
   createdAt: number;
+  // Note: processedEvents is inherited from SpanState
 }
+
+/** Maximum number of processed events to keep per session (to prevent unbounded growth) */
+const MAX_PROCESSED_EVENTS = 1000;
+
+/** Maximum age for processed event fingerprints before cleanup (10 minutes in seconds) */
+const PROCESSED_EVENT_MAX_AGE_SECONDS = 600;
 
 /**
  * Get the file path for a session's state file.
@@ -171,9 +185,11 @@ export function registerActiveSpan(
 
   state.activeSpans[toolUseId] = {
     spanId: spanInfo.spanId,
+    observationId: spanInfo.observationId,
     startTime: spanInfo.startTime ?? Date.now(),
     traceId: spanInfo.traceId,
     parentSpanId: spanInfo.parentSpanId,
+    parentObservationId: spanInfo.parentObservationId,
     traceparent: spanInfo.traceparent,
     ctx: spanInfo.ctx,
     parent_tool_use_id: spanInfo.parent_tool_use_id,
@@ -554,6 +570,86 @@ export function removePendingParentContext(parentSessionId: string, toolUseId: s
 }
 
 /**
+ * Find pending parent context that matches a subagent session.
+ * Used by SubagentStop to find the parent context for cleanup after the subagent completes.
+ *
+ * This function searches for pending parent contexts that:
+ * 1. Match by traceparent if provided (most reliable)
+ * 2. Are within the extended TTL window (30 minutes for long-running subagents)
+ *
+ * @param subagentSessionId - The subagent's session ID (for logging/debugging)
+ * @param parentTraceparent - Optional traceparent from the subagent's session to match
+ * @returns The matching pending parent context, or null if not found
+ */
+export function findPendingParentContextBySession(
+  _subagentSessionId: string,
+  parentTraceparent?: string
+): PendingParentContext | null {
+  try {
+    if (!existsSync(PERSISTENCE_DIR)) return null;
+
+    const files = readdirSync(PERSISTENCE_DIR);
+    const now = Date.now();
+    let bestMatch: PendingParentContext | null = null;
+
+    for (const file of files) {
+      if (!file.startsWith(PENDING_PARENT_PREFIX)) continue;
+
+      try {
+        const path = join(PERSISTENCE_DIR, file);
+        const data = readFileSync(path, "utf8");
+        const ctx = JSON.parse(data) as PendingParentContext;
+
+        // Skip contexts that are too old (using extended TTL for running subagents)
+        if (now - ctx.createdAt > PENDING_PARENT_TTL_MS) {
+          continue;
+        }
+
+        // Best match: traceparent matches exactly
+        if (parentTraceparent && ctx.traceparent === parentTraceparent) {
+          return ctx; // Exact match, return immediately
+        }
+
+        // Otherwise, track the most recent context as a potential match
+        // (SubagentStop may not have traceparent in cross-process scenario)
+        if (!bestMatch || ctx.createdAt > bestMatch.createdAt) {
+          bestMatch = ctx;
+        }
+      } catch {
+        // Skip invalid files
+      }
+    }
+
+    return bestMatch;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Find and remove pending parent context for a subagent session.
+ * This is the primary function for SubagentStop to use - it finds the context,
+ * returns it for use, and then removes it.
+ *
+ * @param subagentSessionId - The subagent's session ID
+ * @param parentTraceparent - Optional traceparent to match
+ * @returns The matching context if found (already removed), or null
+ */
+export function findAndRemovePendingParentContextBySession(
+  subagentSessionId: string,
+  parentTraceparent?: string
+): PendingParentContext | null {
+  const ctx = findPendingParentContextBySession(subagentSessionId, parentTraceparent);
+
+  if (ctx) {
+    // Remove the context now that we've found it
+    removePendingParentContext(ctx.parentSessionId, ctx.toolUseId);
+  }
+
+  return ctx;
+}
+
+/**
  * Clean up all expired pending parent contexts.
  */
 export function cleanupPendingParentContexts(): void {
@@ -580,5 +676,111 @@ export function cleanupPendingParentContexts(): void {
     }
   } catch {
     // Ignore cleanup errors
+  }
+}
+
+// =============================================================================
+// Event Deduplication (prevents duplicate events across processes)
+// =============================================================================
+
+/**
+ * Create an event fingerprint for deduplication.
+ * Format: `${hook_event_name}:${tool_use_id || timestamp_bucket}`
+ * where timestamp_bucket is `Math.floor(Date.now() / 1000)` (1-second buckets)
+ *
+ * @param hookEventName - The hook event name (e.g., "UserPromptSubmit", "SubagentStop")
+ * @param toolUseId - Optional tool use ID for tool-related events
+ * @returns A fingerprint string for deduplication
+ */
+export function createEventFingerprint(hookEventName: string, toolUseId?: string): string {
+  if (toolUseId) {
+    return `${hookEventName}:${toolUseId}`;
+  }
+  // Use 1-second timestamp buckets for events without tool_use_id
+  const timestampBucket = Math.floor(Date.now() / 1000);
+  return `${hookEventName}:${timestampBucket}`;
+}
+
+/**
+ * Check if an event has already been processed for a session.
+ *
+ * @param sessionId - The session identifier
+ * @param fingerprint - The event fingerprint to check
+ * @returns true if the event has already been processed, false otherwise
+ */
+export function hasProcessedEvent(sessionId: string, fingerprint: string): boolean {
+  const state = loadSpanState(sessionId);
+  if (!state) return false;
+
+  // Handle backwards compatibility - older states may not have processedEvents
+  if (!state.processedEvents) return false;
+
+  return state.processedEvents.includes(fingerprint);
+}
+
+/**
+ * Mark an event as processed for a session.
+ * Uses atomic file operations and cleans up old fingerprints.
+ *
+ * @param sessionId - The session identifier
+ * @param fingerprint - The event fingerprint to mark as processed
+ */
+export function markEventProcessed(sessionId: string, fingerprint: string): void {
+  const state = loadSpanState(sessionId);
+  if (!state) return;
+
+  // Initialize processedEvents if not present (backwards compatibility)
+  if (!state.processedEvents) {
+    state.processedEvents = [];
+  }
+
+  // Don't add duplicates
+  if (state.processedEvents.includes(fingerprint)) {
+    return;
+  }
+
+  // Add the new fingerprint
+  state.processedEvents.push(fingerprint);
+
+  // Clean up old fingerprints if we have too many
+  if (state.processedEvents.length > MAX_PROCESSED_EVENTS) {
+    // Keep only the most recent fingerprints
+    state.processedEvents = state.processedEvents.slice(-MAX_PROCESSED_EVENTS);
+  }
+
+  saveSpanState(sessionId, state);
+}
+
+/**
+ * Clean up old processed event fingerprints for a session.
+ * Called during cleanupOldStates to remove stale fingerprints.
+ *
+ * @param sessionId - The session identifier
+ */
+export function cleanupProcessedEvents(sessionId: string): void {
+  const state = loadSpanState(sessionId);
+  if (!state || !state.processedEvents) return;
+
+  const now = Math.floor(Date.now() / 1000);
+
+  // Filter out fingerprints older than PROCESSED_EVENT_MAX_AGE_SECONDS
+  // Fingerprints with timestamp buckets are in format "EventName:timestamp"
+  const filtered = state.processedEvents.filter((fp) => {
+    const parts = fp.split(":");
+    if (parts.length < 2) return true; // Keep malformed fingerprints
+
+    const lastPart = parts[parts.length - 1];
+    const timestamp = parseInt(lastPart, 10);
+
+    // If not a valid timestamp (e.g., it's a tool_use_id), keep it
+    if (isNaN(timestamp) || timestamp > 2000000000) return true;
+
+    // If timestamp is within the max age, keep it
+    return now - timestamp < PROCESSED_EVENT_MAX_AGE_SECONDS;
+  });
+
+  if (filtered.length !== state.processedEvents.length) {
+    state.processedEvents = filtered;
+    saveSpanState(sessionId, state);
   }
 }

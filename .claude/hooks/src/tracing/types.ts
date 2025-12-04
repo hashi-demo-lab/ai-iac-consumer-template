@@ -19,6 +19,8 @@ export interface SpanState {
   activeSpans: Record<string, ActiveSpanInfo>;
   /** Session-level metrics accumulated across tool executions */
   metrics?: SessionMetrics;
+  /** Set of event fingerprints that have been processed (for deduplication) */
+  processedEvents?: string[];
 }
 
 /**
@@ -36,6 +38,8 @@ export interface ActiveSpanInfo {
   traceId?: string;
   /** The parent span ID for hierarchy preservation */
   parentSpanId?: string;
+  /** The parent observation ID for Langfuse hierarchy (stored for cross-process recovery) */
+  parentObservationId?: string;
   /** W3C traceparent for OTel context propagation */
   traceparent?: string;
   /** Original tool context for cross-process restoration */

@@ -98,6 +98,14 @@ export {
   findPendingParentContext,
   removePendingParentContext,
   cleanupPendingParentContexts,
+  // Extended functions for SubagentStop cleanup
+  findPendingParentContextBySession,
+  findAndRemovePendingParentContextBySession,
+  // Event deduplication for cross-process duplicate prevention
+  createEventFingerprint,
+  hasProcessedEvent,
+  markEventProcessed,
+  cleanupProcessedEvents,
   type PersistedSpanState,
   type TokenData,
   type PendingParentContext,
