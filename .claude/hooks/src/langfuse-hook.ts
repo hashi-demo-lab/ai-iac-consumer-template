@@ -14,8 +14,14 @@ const dotenvResult = config({ path: join(__dirname, "..", ".env") });
 if (dotenvResult.parsed) {
   // Only assign values that aren't already set (preserve existing env vars)
   // Check for both undefined and empty string since dotenv v17 may set empty strings
+  // Special case: URL values (LANGFUSE_HOST/LANGFUSE_BASE_URL) should be validated and
+  // overwritten if they appear malformed (missing :// indicates truncation)
   for (const [key, value] of Object.entries(dotenvResult.parsed)) {
-    if (!process.env[key]) {
+    const existingValue = process.env[key];
+    const isUrlKey = key === "LANGFUSE_HOST" || key === "LANGFUSE_BASE_URL";
+    const isMalformedUrl = isUrlKey && existingValue && !existingValue.includes("://");
+
+    if (!existingValue || isMalformedUrl) {
       process.env[key] = value;
     }
   }
