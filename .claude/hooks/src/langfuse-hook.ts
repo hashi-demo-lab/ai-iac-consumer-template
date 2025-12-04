@@ -9,7 +9,17 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const enabledFromEnv = process.env.LANGFUSE_HOOK_ENABLED;
 
 // Load .env from the hooks directory (not CWD) - don't override existing env vars
-config({ path: join(__dirname, "..", ".env") });
+// Note: dotenv v17 doesn't reliably inject all values into process.env, so we manually assign
+const dotenvResult = config({ path: join(__dirname, "..", ".env") });
+if (dotenvResult.parsed) {
+  // Only assign values that aren't already set (preserve existing env vars)
+  // Check for both undefined and empty string since dotenv v17 may set empty strings
+  for (const [key, value] of Object.entries(dotenvResult.parsed)) {
+    if (!process.env[key]) {
+      process.env[key] = value;
+    }
+  }
+}
 
 // Early exit if hook is not enabled (check original env value or loaded value)
 const HOOK_ENABLED = (enabledFromEnv ?? process.env.LANGFUSE_HOOK_ENABLED) === "true" ||
