@@ -19,6 +19,9 @@ ARG TZ \
 # Install uv directly from the official uv image (ensure version pinning for stability)
 COPY --from=docker.io/astral/uv:latest /uv /uvx /usr/local/bin/
 
+# Install Go from official image (multi-stage copy is more efficient than downloading)
+COPY --from=docker.io/library/golang:1.24-bookworm /usr/local/go /usr/local/go
+
 # Install packages, configure locale, set up directories, and install delta in one layer
 # Note: node:20-slim requires ca-certificates for HTTPS operations
 RUN apt update && apt install -y --no-install-recommends \
@@ -31,9 +34,9 @@ RUN apt update && apt install -y --no-install-recommends \
     locale-gen en_US.UTF-8 && \
     update-locale LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8 && \
     # Set up directories and permissions
-    mkdir -p /usr/local/share/npm-global /commandhistory /workspace /home/node/.claude /home/node/.config && \
+    mkdir -p /usr/local/share/npm-global /commandhistory /workspace /home/node/.claude /home/node/.config /home/node/go && \
     touch /commandhistory/.bash_history && \
-    chown -R node:node /usr/local/share /commandhistory /workspace /home/node/.claude /home/node/.config && \
+    chown -R node:node /usr/local/share /commandhistory /workspace /home/node/.claude /home/node/.config /home/node/go && \
     # Install delta
     ARCH=$(dpkg --print-architecture) && \
     wget -q "https://github.com/dandavison/delta/releases/download/0.18.2/git-delta_0.18.2_${ARCH}.deb" && \
@@ -49,7 +52,9 @@ ENV TZ="$TZ" \
     LANGUAGE=en_US:en \
     DEVCONTAINER=true \
     NPM_CONFIG_PREFIX=/usr/local/share/npm-global \
-    PATH=/usr/local/share/npm-global/bin:/root/.local/bin:$PATH \
+    GOROOT=/usr/local/go \
+    GOPATH=/home/node/go \
+    PATH=/usr/local/go/bin:/home/node/go/bin:/usr/local/share/npm-global/bin:/root/.local/bin:$PATH \
     SHELL=/bin/zsh
 
 WORKDIR /workspace
@@ -88,4 +93,5 @@ RUN sh -c "$(wget -O- https://github.com/deluan/zsh-in-docker/releases/download/
         -x && \
     uv tool install pre-commit --with pre-commit-uv && \
     uv tool install specify-cli --from git+https://github.com/github/spec-kit.git && \
+    go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest && \
     echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.zshrc 

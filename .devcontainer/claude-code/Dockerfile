@@ -1,4 +1,4 @@
-FROM panchalravi/terraform-ai-tools:latest
+FROM srlynch1/terraform-ai-tools:latest
 
 RUN npm install -g @anthropic-ai/claude-code ccstatusline && \
     npm cache clean --force
