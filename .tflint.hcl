@@ -23,6 +23,10 @@ plugin "aws" {
   source  = "github.com/terraform-linters/tflint-ruleset-aws"
 }
 
+plugin "terraform" {
+    enabled = true
+}
+
 # Terraform naming conventions
 rule "terraform_naming_convention" {
   enabled = true
@@ -88,7 +92,6 @@ rule "terraform_standard_module_structure" {
   enabled = true
 }
 
-# Require workspace remote backend (HCP Terraform)
 rule "terraform_required_version" {
   enabled = true
 }
