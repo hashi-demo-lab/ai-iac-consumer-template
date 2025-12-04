@@ -56,6 +56,7 @@ import {
   getSubagentInfo,
   isSubagentTool,
   getGitContext,
+  getSubagentStopInfo,
 } from "./utils.js";
 import {
   initTracing,
@@ -67,10 +68,13 @@ import {
   createToolObservation,
   createToolObservationWithContext,
   createTraceparent,
+  parseTraceparent,
   finalizeToolObservation,
   finalizeSessionObservation,
   recordEvent,
   recordEventWithContext,
+  // Cross-process upsert for duplicate prevention
+  upsertToolObservation,
   // Persistence functions for cross-process span linking
   registerActiveSpan,
   popActiveSpan,
@@ -278,9 +282,10 @@ function processEvent(event: ClaudeCodeEvent): void {
       // Create traceparent for this span (for nested tool linking)
       const spanTraceparent = createTraceparent(observation.traceId, observation.id);
 
-      // Persist context for cross-process retrieval
+      // Persist context for cross-process retrieval (includes observationId for upsert)
       registerActiveSpan(event.session_id, event.tool_use_id, {
         spanId: observation.id,
+        observationId: observation.id, // Store for upsert in PostToolUse
         traceId: observation.traceId,
         parentSpanId: actualParent?.id,
         traceparent: spanTraceparent,
@@ -384,22 +389,7 @@ function processEvent(event: ClaudeCodeEvent): void {
             model: event.model,
           };
 
-          // Use traceparent for cross-process context restoration
-          let observation: ToolObservation;
-          if (persistedSpan.traceparent) {
-            // Create observation within restored parent context
-            observation = createToolObservationWithContext(restoredCtx, persistedSpan.traceparent, event.session_id);
-            debugLog(`Cross-process observation with span traceparent: ${persistedSpan.traceparent}`);
-          } else if (persistedSession?.traceparent) {
-            // Fall back to session traceparent
-            observation = createToolObservationWithContext(restoredCtx, persistedSession.traceparent, event.session_id);
-            debugLog(`Cross-process observation with session traceparent: ${persistedSession.traceparent}`);
-          } else {
-            // Last resort: attach to in-memory session if available
-            observation = createToolObservation(restoredCtx, undefined, sessionObs);
-            debugLog(`Cross-process observation with in-memory session (no traceparent)`);
-          }
-
+          // Build result and metadata for upsert
           const result: ToolResult = {
             success: analysis.success,
             error: analysis.error ?? undefined,
@@ -409,7 +399,70 @@ function processEvent(event: ClaudeCodeEvent): void {
             durationMs,
           };
 
-          finalizeToolObservation(observation, result, restoredCtx, event.tokens);
+          const resultMetadata: Record<string, unknown> = {
+            success: result.success,
+            duration_ms: durationMs,
+          };
+          if (result.error) resultMetadata.error = result.error;
+          if (result.errorType) resultMetadata.error_type = result.errorType;
+          if (result.exitCode !== undefined) resultMetadata.exit_code = result.exitCode;
+          if (restoredCtx.isSubagent) {
+            if (restoredCtx.subagentType) resultMetadata.subagent_type = restoredCtx.subagentType;
+            if (restoredCtx.subagentDescription) resultMetadata.subagent_description = restoredCtx.subagentDescription;
+            if (restoredCtx.subagentModel) resultMetadata.subagent_model = restoredCtx.subagentModel;
+          }
+          // Add token usage to metadata
+          if (event.tokens && (event.tokens.input || event.tokens.output || event.tokens.total)) {
+            resultMetadata.token_usage = {
+              input_tokens: event.tokens.input ?? 0,
+              output_tokens: event.tokens.output ?? 0,
+              total_tokens: event.tokens.total ?? ((event.tokens.input ?? 0) + (event.tokens.output ?? 0)),
+            };
+          }
+
+          // Use upsert if we have an observationId from PreToolUse (prevents duplicates)
+          if (persistedSpan.observationId) {
+            // Parse traceparent to get parent span context for hierarchy
+            const parsedParent = persistedSpan.traceparent ? parseTraceparent(persistedSpan.traceparent) : null;
+            const parentSpanContext = parsedParent ? {
+              traceId: parsedParent.traceId,
+              spanId: parsedParent.spanId,
+              traceFlags: parsedParent.traceFlags,
+              isRemote: true as const,
+            } : undefined;
+
+            upsertToolObservation({
+              id: persistedSpan.observationId, // Same ID = upsert, not create
+              traceId: persistedSpan.traceId || "",
+              name: restoredCtx.isSubagent
+                ? (restoredCtx.subagentType ? `Agent:${restoredCtx.subagentType}` : `Agent:${restoredCtx.toolName}`)
+                : restoredCtx.toolName,
+              startTime: new Date(persistedSpan.startTime ?? Date.now()),
+              endTime: new Date(),
+              output: event.tool_response,
+              level: result.success ? "DEFAULT" : "ERROR",
+              statusMessage: result.error,
+              metadata: resultMetadata,
+              sessionId: event.session_id,
+              parentSpanContext,
+              observationType: restoredCtx.isSubagent ? "agent" : "tool",
+            });
+            debugLog(`Cross-process upsert with observationId: ${persistedSpan.observationId}`);
+          } else {
+            // Legacy fallback: create new observation (may cause duplicates)
+            let observation: ToolObservation;
+            if (persistedSpan.traceparent) {
+              observation = createToolObservationWithContext(restoredCtx, persistedSpan.traceparent, event.session_id);
+              debugLog(`Cross-process observation with span traceparent: ${persistedSpan.traceparent}`);
+            } else if (persistedSession?.traceparent) {
+              observation = createToolObservationWithContext(restoredCtx, persistedSession.traceparent, event.session_id);
+              debugLog(`Cross-process observation with session traceparent: ${persistedSession.traceparent}`);
+            } else {
+              observation = createToolObservation(restoredCtx, undefined, sessionObs);
+              debugLog(`Cross-process observation with in-memory session (no traceparent)`);
+            }
+            finalizeToolObservation(observation, result, restoredCtx, event.tokens);
+          }
 
           // Clean up pending parent context if this was a Task (subagent) tool
           if (isSubagent) {
@@ -422,7 +475,7 @@ function processEvent(event: ClaudeCodeEvent): void {
               subagentInfo ? ` (${subagentInfo.type})` : ""
             } (${durationMs}ms): ${
               analysis.success ? "OK" : "ERROR"
-            } [cross-process]`
+            } [cross-process${persistedSpan.observationId ? "-upsert" : ""}]`
           );
         } else {
           // Fallback: no persisted span -> create observation attached to session
@@ -574,24 +627,35 @@ function processEvent(event: ClaudeCodeEvent): void {
     }
 
     case "SubagentStop": {
-      const eventMetadata = {
+      // Get pending parent context and session metrics for richer data
+      const pendingContext = findPendingParentContext();
+      const metrics = getSessionMetrics(event.session_id);
+
+      // Extract structured subagent stop info from multiple sources
+      const stopInfo = getSubagentStopInfo(event, pendingContext, metrics);
+
+      const eventMetadata: Record<string, unknown> = {
         stop_hook_active: event.stop_hook_active ?? false,
         timestamp: event.timestamp || new Date().toISOString(),
+        has_agent_id: !!event.agent_id,
+        has_transcript: !!event.agent_transcript_path,
+        has_parent_context: !!pendingContext,
       };
 
       if (sessionObs) {
         // In-memory session available (same process)
-        recordEvent("subagent_completed", null, eventMetadata, sessionObs);
+        recordEvent("subagent_completed", stopInfo, eventMetadata, sessionObs);
       } else if (persistedSession?.traceparent) {
         // Cross-process: use traceparent to link to correct trace
-        recordEventWithContext("subagent_completed", null, eventMetadata, persistedSession.traceparent, event.session_id);
+        recordEventWithContext("subagent_completed", stopInfo, eventMetadata, persistedSession.traceparent, event.session_id);
         DEBUG && log("DEBUG", `SubagentStop with cross-process traceparent: ${persistedSession.traceparent}`);
       } else {
         // Fallback: create orphan event (will not be linked)
-        recordEvent("subagent_completed", null, eventMetadata);
+        recordEvent("subagent_completed", stopInfo, eventMetadata);
         DEBUG && log("DEBUG", "SubagentStop without session context (orphan event)");
       }
-      log("INFO", "Subagent completed");
+
+      log("INFO", `Subagent completed${stopInfo?.agent_id ? ` (${stopInfo.agent_id})` : ""}${stopInfo?.session_summary ? ` - tools: ${stopInfo.session_summary.tool_count}` : ""}`);
       break;
     }
 

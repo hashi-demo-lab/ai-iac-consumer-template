@@ -663,6 +663,134 @@ export function recordEvent(
 }
 
 /**
+ * Parameters for upserting an observation in PostToolUse (cross-process).
+ */
+export interface UpsertObservationParams {
+  /** The observation ID to upsert (same ID = update, not create) */
+  id: string;
+  /** The trace ID for this observation */
+  traceId: string;
+  /** Observation name */
+  name: string;
+  /** Start time of the observation */
+  startTime: Date;
+  /** End time of the observation */
+  endTime: Date;
+  /** Output data */
+  output?: unknown;
+  /** Observation level */
+  level?: ObservationLevel;
+  /** Error message if failed */
+  statusMessage?: string;
+  /** Metadata including success, duration, tokens, etc. */
+  metadata?: Record<string, unknown>;
+  /** Session ID for trace linking */
+  sessionId?: string;
+  /** Parent span context for hierarchy */
+  parentSpanContext?: SpanContext;
+  /** Observation type: agent or tool */
+  observationType?: "agent" | "tool";
+}
+
+/**
+ * Upsert a tool observation in PostToolUse for cross-process scenarios.
+ *
+ * Strategy: Since Langfuse SDK v4's startObservation doesn't support custom IDs,
+ * we create a NEW observation that includes all the data from both PreToolUse and PostToolUse.
+ * The key insight is that the PreToolUse observation was already created and ended in that process,
+ * so here we just need to create the final observation with complete data.
+ *
+ * To prevent duplicates, the PreToolUse handler should NOT end() the observation - it should
+ * leave it "open" for the PostToolUse handler to finalize. However, since we're in different
+ * processes, the observation object from PreToolUse is lost.
+ *
+ * For now, we create a complete observation in PostToolUse with all the data marked as
+ * cross_process_completion. The PreToolUse observation will remain as a "started" event and
+ * this PostToolUse observation will be the "completed" event with full result data.
+ *
+ * @param params - Upsert parameters including the observation ID from PreToolUse
+ * @returns The created ToolObservation wrapper
+ */
+export function upsertToolObservation(params: UpsertObservationParams): ToolObservation {
+  const {
+    id,
+    traceId,
+    name,
+    startTime,
+    endTime,
+    output,
+    level,
+    statusMessage,
+    metadata,
+    sessionId,
+    parentSpanContext,
+    observationType = "tool",
+  } = params;
+
+  // Build complete metadata with cross-process completion marker
+  const fullMetadata = {
+    ...metadata,
+    cross_process_completion: true,
+    original_observation_id: id, // Link to the PreToolUse observation for correlation
+    start_time_iso: startTime.toISOString(),
+    end_time_iso: endTime.toISOString(),
+    duration_ms: endTime.getTime() - startTime.getTime(),
+  };
+
+  // Create a new observation with parent context for proper linking
+  // This creates a sibling to the PreToolUse observation but with complete result data
+  // Note: We use type assertion to satisfy TypeScript while the runtime supports "agent"/"tool"
+  const observation = observationType === "agent"
+    ? startObservation(`${name}:result`, {
+        output,
+        metadata: fullMetadata,
+        level,
+        statusMessage,
+      }, {
+        asType: "agent" as const,
+        parentSpanContext,
+      })
+    : startObservation(`${name}:result`, {
+        output,
+        metadata: fullMetadata,
+        level,
+        statusMessage,
+      }, {
+        asType: "tool" as const,
+        parentSpanContext,
+      });
+
+  // Update trace with sessionId for cross-process correlation
+  if (sessionId) {
+    observation.updateTrace({
+      sessionId,
+      name: "claude-code-session",
+    });
+  }
+
+  // End the observation immediately (we're finalizing it)
+  observation.end();
+
+  return {
+    traceId: observation.traceId || traceId,
+    id: observation.id,
+    observationType,
+    _observation: observation,
+    update(updateParams) {
+      observation.update({
+        output: updateParams.output,
+        level: updateParams.level,
+        statusMessage: updateParams.statusMessage,
+        metadata: updateParams.metadata,
+      });
+    },
+    end() {
+      // Already ended above
+    },
+  };
+}
+
+/**
  * Record an event within a restored parent context (cross-process).
  * Uses W3C traceparent to link the event to the correct trace.
  *
@@ -721,13 +849,13 @@ export function recordEventWithContext(
  * @param observation - The observation to update
  * @param result - The tool result
  * @param ctx - Optional additional context
- * @param _tokens - Optional token usage (currently not used in v4 SDK for agent/tool types)
+ * @param tokens - Optional token usage (stored in metadata since v4 SDK agent/tool types don't support usageDetails)
  */
 export function finalizeToolObservation(
   observation: ToolObservation,
   result: ToolResult,
   ctx?: Partial<ToolContext>,
-  _tokens?: TokenUsage
+  tokens?: TokenUsage
 ): void {
   const level: ObservationLevel = result.success ? "DEFAULT" : "ERROR";
 
@@ -753,6 +881,17 @@ export function finalizeToolObservation(
     if (ctx.subagentType) metadata.subagent_type = ctx.subagentType;
     if (ctx.subagentDescription) metadata.subagent_description = ctx.subagentDescription;
     if (ctx.subagentModel) metadata.subagent_model = ctx.subagentModel;
+  }
+
+  // Add token usage to metadata if available
+  // Note: Langfuse SDK v4 agent/tool observation types don't support usageDetails
+  // (only generation type does), so we store tokens in metadata for visibility
+  if (tokens && (tokens.input || tokens.output || tokens.total)) {
+    metadata.token_usage = {
+      input_tokens: tokens.input ?? 0,
+      output_tokens: tokens.output ?? 0,
+      total_tokens: tokens.total ?? ((tokens.input ?? 0) + (tokens.output ?? 0)),
+    };
   }
 
   observation.update({

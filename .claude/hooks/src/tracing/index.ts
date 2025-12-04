@@ -66,6 +66,8 @@ export {
   finalizeSessionObservation,
   recordEvent,
   recordEventWithContext,
+  // Cross-process upsert for duplicate prevention
+  upsertToolObservation,
   // Traceparent helpers for cross-process context propagation
   createTraceparent,
   parseTraceparent,
@@ -74,6 +76,7 @@ export {
   type ToolObservation,
   type CreateObservationOptions,
   type FinalizeSessionOptions,
+  type UpsertObservationParams,
 } from "./observations.js";
 
 // Persistence exports for cross-process span linking

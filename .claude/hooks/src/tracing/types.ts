@@ -28,6 +28,8 @@ export interface SpanState {
 export interface ActiveSpanInfo {
   /** The OpenTelemetry span ID */
   spanId: string;
+  /** The Langfuse observation ID (for upsert in PostToolUse) */
+  observationId?: string;
   /** Timestamp when the span started (ms since epoch) */
   startTime: number;
   /** The trace ID for linking */

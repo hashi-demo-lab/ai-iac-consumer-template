@@ -34,6 +34,11 @@ export interface ClaudeCodeEvent {
   // UserPromptSubmit fields
   /** User prompt content (for UserPromptSubmit events) */
   prompt?: string;
+  // SubagentStop fields (Claude Code v2.0.42+)
+  /** Agent ID for subagent sessions */
+  agent_id?: string;
+  /** Path to the subagent's transcript file */
+  agent_transcript_path?: string;
 }
 
 // Constants
@@ -269,4 +274,112 @@ export function getGitContext(cwd: string): GitContext {
   }
 
   return context;
+}
+
+// =============================================================================
+// SubagentStop Information Extraction
+// =============================================================================
+
+/**
+ * Structured information about a subagent stop event.
+ * Aggregates data from multiple sources for richer Langfuse visibility.
+ */
+export interface SubagentStopInfo {
+  /** Agent ID (from event, v2.0.42+) */
+  agent_id?: string;
+  /** Preview of transcript content */
+  transcript_preview?: string;
+  /** Path to full transcript file */
+  transcript_path?: string;
+  /** Type of parent task that spawned this subagent */
+  parent_task_type?: string;
+  /** Description of the parent task */
+  parent_task_description?: string;
+  /** Session-level summary metrics */
+  session_summary?: {
+    tool_count?: number;
+    subagent_count?: number;
+    error_count?: number;
+    total_duration_ms?: number;
+  };
+}
+
+/**
+ * Pending parent context interface (matches persistence.ts).
+ */
+interface PendingParentContextLike {
+  subagentType?: string;
+  parentSessionId?: string;
+}
+
+/**
+ * Session metrics interface (matches types.ts).
+ */
+interface SessionMetricsLike {
+  toolCount?: number;
+  subagentCount?: number;
+  errorCount?: number;
+  totalDurationMs?: number;
+}
+
+/**
+ * Read a short excerpt from a transcript file.
+ * Returns null if file doesn't exist or can't be read.
+ */
+function readTranscriptExcerpt(path: string, maxLength = 500): string | null {
+  try {
+    const { readFileSync } = require("node:fs");
+    const content = readFileSync(path, "utf8");
+    return truncate(content, maxLength);
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Extract structured information from a SubagentStop event.
+ * Aggregates data from event fields, pending parent context, and session metrics.
+ *
+ * @param event - The Claude Code event (SubagentStop)
+ * @param pendingContext - Optional pending parent context from Task tool
+ * @param metrics - Optional session metrics
+ * @returns Structured subagent stop info, or null if no useful data available
+ */
+export function getSubagentStopInfo(
+  event: ClaudeCodeEvent,
+  pendingContext?: PendingParentContextLike | null,
+  metrics?: SessionMetricsLike | null
+): SubagentStopInfo | null {
+  const info: SubagentStopInfo = {};
+
+  // Source 1: Direct event fields (Claude Code v2.0.42+)
+  if (event.agent_id) {
+    info.agent_id = event.agent_id;
+  }
+
+  if (event.agent_transcript_path) {
+    info.transcript_path = event.agent_transcript_path;
+    const preview = readTranscriptExcerpt(event.agent_transcript_path);
+    if (preview) {
+      info.transcript_preview = preview;
+    }
+  }
+
+  // Source 2: Pending parent context (from Task tool that spawned this subagent)
+  if (pendingContext?.subagentType) {
+    info.parent_task_type = pendingContext.subagentType;
+  }
+
+  // Source 3: Session metrics (aggregate performance data)
+  if (metrics) {
+    info.session_summary = {
+      tool_count: metrics.toolCount,
+      subagent_count: metrics.subagentCount,
+      error_count: metrics.errorCount,
+      total_duration_ms: metrics.totalDurationMs,
+    };
+  }
+
+  // Return null if no useful data was collected
+  return Object.keys(info).length > 0 ? info : null;
 }

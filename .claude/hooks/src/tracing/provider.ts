@@ -20,7 +20,23 @@ const DEFAULTS = {
   baseUrl: "https://cloud.langfuse.com",
   environment: "development",
   release: "claude-code",
+  serviceName: "claude-code-langfuse-hook",
+  serviceVersion: "2.0.0",
 } as const;
+
+/**
+ * Create service resource attributes for OpenTelemetry.
+ * These are set as environment variables for the Langfuse SDK to pick up.
+ *
+ * @param environment - The deployment environment (e.g., "development", "production")
+ */
+function setServiceResourceEnv(environment: string): void {
+  // Set OTEL_SERVICE_NAME for OpenTelemetry SDK to use
+  // This is the standard way to configure service name in OTEL
+  process.env.OTEL_SERVICE_NAME = DEFAULTS.serviceName;
+  process.env.OTEL_SERVICE_VERSION = DEFAULTS.serviceVersion;
+  process.env.OTEL_DEPLOYMENT_ENVIRONMENT = environment;
+}
 
 /**
  * Initialize the Langfuse tracing provider with OpenTelemetry.
@@ -54,6 +70,10 @@ export function initTracing(config: TracingConfig): boolean {
     process.env.LANGFUSE_BASE_URL = baseUrl;
     process.env.LANGFUSE_RELEASE = release;
     process.env.LANGFUSE_ENVIRONMENT = environment;
+
+    // Set service resource attributes via environment variables
+    // OTEL_SERVICE_NAME is the standard way to configure service name
+    setServiceResourceEnv(environment);
 
     // Create NodeTracerProvider with LangfuseSpanProcessor
     provider = new NodeTracerProvider({
