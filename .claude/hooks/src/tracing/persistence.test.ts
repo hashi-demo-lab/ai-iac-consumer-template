@@ -15,6 +15,9 @@ import {
   popActiveSpan,
   getSessionInfo,
   initSession,
+  getToolChainContext,
+  updateToolChainState,
+  resetToolChainState,
   type PersistedSpanState,
 } from './persistence.js';
 
@@ -335,6 +338,211 @@ describe('Persistence Module', () => {
       // Verify state is cleaned up
       expect(getSessionInfo(sessionId)).toBeNull();
       expect(popActiveSpan(sessionId, 'tool-1')).toBeNull();
+    });
+  });
+
+  describe('Tool Chain Context', () => {
+    describe('getToolChainContext', () => {
+      it('returns initial context with position 1 for new session', () => {
+        const sessionId = `${testSessionPrefix}-chain-new`;
+        initSession(sessionId, 'trace-chain', 'session-chain');
+
+        const context = getToolChainContext(sessionId);
+        expect(context).not.toBeUndefined();
+        expect(context!.position).toBe(1);
+        expect(context!.precedingTool).toBeUndefined();
+        expect(context!.precedingSuccess).toBeUndefined();
+      });
+
+      it('returns correct position after first tool', () => {
+        const sessionId = `${testSessionPrefix}-chain-first`;
+        initSession(sessionId, 'trace-chain', 'session-chain');
+
+        // First tool completes
+        updateToolChainState(sessionId, 'Bash', true);
+
+        // Check context for second tool
+        const context = getToolChainContext(sessionId);
+        expect(context!.position).toBe(2);
+        expect(context!.precedingTool).toBe('Bash');
+        expect(context!.precedingSuccess).toBe(true);
+      });
+
+      it('returns correct position after multiple tools', () => {
+        const sessionId = `${testSessionPrefix}-chain-multi`;
+        initSession(sessionId, 'trace-chain', 'session-chain');
+
+        // Multiple tools complete
+        updateToolChainState(sessionId, 'Read', true);
+        updateToolChainState(sessionId, 'Edit', true);
+        updateToolChainState(sessionId, 'Bash', false);
+
+        // Check context for fourth tool
+        const context = getToolChainContext(sessionId);
+        expect(context!.position).toBe(4);
+        expect(context!.precedingTool).toBe('Bash');
+        expect(context!.precedingSuccess).toBe(false);
+      });
+    });
+
+    describe('updateToolChainState', () => {
+      it('increments chain position correctly', () => {
+        const sessionId = `${testSessionPrefix}-chain-increment`;
+        initSession(sessionId, 'trace-chain', 'session-chain');
+
+        // Position starts at 0 internally
+        updateToolChainState(sessionId, 'Tool1', true);
+        let context = getToolChainContext(sessionId);
+        expect(context!.position).toBe(2); // 1 (chain position) + 1
+
+        updateToolChainState(sessionId, 'Tool2', false);
+        context = getToolChainContext(sessionId);
+        expect(context!.position).toBe(3);
+
+        updateToolChainState(sessionId, 'Tool3', true);
+        context = getToolChainContext(sessionId);
+        expect(context!.position).toBe(4);
+      });
+
+      it('preserves preceding tool info across calls', () => {
+        const sessionId = `${testSessionPrefix}-chain-preserve`;
+        initSession(sessionId, 'trace-chain', 'session-chain');
+
+        // First tool: successful Read
+        updateToolChainState(sessionId, 'Read', true);
+        let context = getToolChainContext(sessionId);
+        expect(context!.precedingTool).toBe('Read');
+        expect(context!.precedingSuccess).toBe(true);
+
+        // Second tool: failed Bash
+        updateToolChainState(sessionId, 'Bash', false);
+        context = getToolChainContext(sessionId);
+        expect(context!.precedingTool).toBe('Bash');
+        expect(context!.precedingSuccess).toBe(false);
+
+        // Third tool: successful Write
+        updateToolChainState(sessionId, 'Write', true);
+        context = getToolChainContext(sessionId);
+        expect(context!.precedingTool).toBe('Write');
+        expect(context!.precedingSuccess).toBe(true);
+      });
+
+      it('handles non-existent session gracefully', () => {
+        // Should not throw
+        updateToolChainState('non-existent-session-chain', 'Tool', true);
+      });
+    });
+
+    describe('resetToolChainState', () => {
+      it('resets chain to initial state', () => {
+        const sessionId = `${testSessionPrefix}-chain-reset`;
+        initSession(sessionId, 'trace-chain', 'session-chain');
+
+        // Accumulate some state
+        updateToolChainState(sessionId, 'Tool1', true);
+        updateToolChainState(sessionId, 'Tool2', false);
+        updateToolChainState(sessionId, 'Tool3', true);
+
+        // Verify we have accumulated state
+        let context = getToolChainContext(sessionId);
+        expect(context!.position).toBe(4);
+        expect(context!.precedingTool).toBe('Tool3');
+
+        // Reset
+        resetToolChainState(sessionId);
+
+        // Verify reset to initial state
+        context = getToolChainContext(sessionId);
+        expect(context!.position).toBe(1);
+        expect(context!.precedingTool).toBeUndefined();
+        expect(context!.precedingSuccess).toBeUndefined();
+      });
+
+      it('handles non-existent session gracefully', () => {
+        // Should not throw
+        resetToolChainState('non-existent-session-reset');
+      });
+
+      it('allows chain to continue after reset', () => {
+        const sessionId = `${testSessionPrefix}-chain-continue`;
+        initSession(sessionId, 'trace-chain', 'session-chain');
+
+        // First chain
+        updateToolChainState(sessionId, 'Tool1', true);
+        updateToolChainState(sessionId, 'Tool2', true);
+
+        // Reset
+        resetToolChainState(sessionId);
+
+        // New chain starts fresh
+        let context = getToolChainContext(sessionId);
+        expect(context!.position).toBe(1);
+
+        // Continue with new chain
+        updateToolChainState(sessionId, 'NewTool1', false);
+        context = getToolChainContext(sessionId);
+        expect(context!.position).toBe(2);
+        expect(context!.precedingTool).toBe('NewTool1');
+        expect(context!.precedingSuccess).toBe(false);
+      });
+    });
+
+    describe('Cascade failure detection', () => {
+      it('identifies cascade failure when preceding tool failed', () => {
+        const sessionId = `${testSessionPrefix}-cascade`;
+        initSession(sessionId, 'trace-cascade', 'session-cascade');
+
+        // First tool fails
+        updateToolChainState(sessionId, 'Bash', false);
+
+        // Next tool can check if preceding failed
+        const context = getToolChainContext(sessionId);
+        expect(context!.precedingSuccess).toBe(false);
+
+        // This can be used to mark as cascade failure
+        const isCascade = context!.precedingSuccess === false;
+        expect(isCascade).toBe(true);
+      });
+
+      it('does not flag cascade when preceding tool succeeded', () => {
+        const sessionId = `${testSessionPrefix}-no-cascade`;
+        initSession(sessionId, 'trace-no-cascade', 'session-no-cascade');
+
+        // First tool succeeds
+        updateToolChainState(sessionId, 'Read', true);
+
+        // Next tool can check if preceding succeeded
+        const context = getToolChainContext(sessionId);
+        expect(context!.precedingSuccess).toBe(true);
+
+        const isCascade = context!.precedingSuccess === false;
+        expect(isCascade).toBe(false);
+      });
+    });
+
+    describe('Cross-process tool chain', () => {
+      it('preserves chain state across process simulations', () => {
+        const sessionId = `${testSessionPrefix}-chain-cross-process`;
+        initSession(sessionId, 'trace-chain-cp', 'session-chain-cp');
+
+        // === Process 1: First tool completes ===
+        updateToolChainState(sessionId, 'Read', true);
+
+        // === Process 2: Second tool starts ===
+        let context = getToolChainContext(sessionId);
+        expect(context!.position).toBe(2);
+        expect(context!.precedingTool).toBe('Read');
+        expect(context!.precedingSuccess).toBe(true);
+
+        // Second tool completes
+        updateToolChainState(sessionId, 'Edit', true);
+
+        // === Process 3: Third tool starts ===
+        context = getToolChainContext(sessionId);
+        expect(context!.position).toBe(3);
+        expect(context!.precedingTool).toBe('Edit');
+        expect(context!.precedingSuccess).toBe(true);
+      });
     });
   });
 });

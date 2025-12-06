@@ -6,11 +6,13 @@
 import { NodeTracerProvider } from "@opentelemetry/sdk-trace-node";
 import { LangfuseSpanProcessor } from "@langfuse/otel";
 import { setLangfuseTracerProvider } from "@langfuse/tracing";
+import { LangfuseClient } from "@langfuse/client";
 import type { TracingConfig } from "./types.js";
 
 // Module-level state
 let isInitialized = false;
 let provider: NodeTracerProvider | null = null;
+let langfuseClient: LangfuseClient | null = null;
 let currentConfig: TracingConfig | null = null;
 
 /**
@@ -83,6 +85,13 @@ export function initTracing(config: TracingConfig): boolean {
     // Set as the Langfuse tracer provider for @langfuse/tracing
     setLangfuseTracerProvider(provider);
 
+    // Create Langfuse client for score recording
+    langfuseClient = new LangfuseClient({
+      publicKey,
+      secretKey,
+      baseUrl,
+    });
+
     currentConfig = { ...config, environment, release };
     isInitialized = true;
 
@@ -118,7 +127,7 @@ export async function forceFlush(): Promise<void> {
 
 /**
  * Shutdown the tracing provider gracefully.
- * Flushes pending spans and cleans up resources.
+ * Flushes pending spans and scores, then cleans up resources.
  */
 export async function shutdownTracing(): Promise<void> {
   if (!isInitialized) {
@@ -126,16 +135,44 @@ export async function shutdownTracing(): Promise<void> {
   }
 
   try {
+    // Flush pending spans first
     await forceFlush();
     if (provider) {
       await provider.shutdown();
+    }
+    // Flush pending scores - important for short-lived processes
+    if (langfuseClient) {
+      await langfuseClient.score.flush();
     }
   } catch {
     // Ignore shutdown errors
   } finally {
     provider = null;
+    langfuseClient = null;
     currentConfig = null;
     isInitialized = false;
+  }
+}
+
+/**
+ * Get the Langfuse client instance for score recording.
+ * Returns null if tracing is not initialized.
+ */
+export function getLangfuseClient(): LangfuseClient | null {
+  return langfuseClient;
+}
+
+/**
+ * Flush pending scores to Langfuse.
+ * Call this after recording scores in short-lived processes.
+ */
+export async function flushScores(): Promise<void> {
+  if (langfuseClient) {
+    try {
+      await langfuseClient.score.flush();
+    } catch {
+      // Ignore flush errors
+    }
   }
 }
 

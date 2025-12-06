@@ -21,6 +21,8 @@ export interface SpanState {
   metrics?: SessionMetrics;
   /** Set of event fingerprints that have been processed (for deduplication) */
   processedEvents?: string[];
+  /** Tool chain state for tracking sequential execution and cascade failures */
+  toolChain?: ToolChainState;
 }
 
 /**
@@ -172,6 +174,34 @@ export interface TokenUsage {
   output?: number;
   /** Total tokens (input + output) */
   total?: number;
+}
+
+/**
+ * Context for tracking tool chain information (for cascade failure detection).
+ */
+export interface ToolChainContext {
+  /** Position of this tool in the execution chain (1-based) */
+  position: number;
+  /** Name of the preceding tool (if any) */
+  precedingTool?: string;
+  /** Whether the preceding tool succeeded (if any) */
+  precedingSuccess?: boolean;
+  /** Whether this is a retry of a previously failed tool */
+  isRetry?: boolean;
+  /** Number of times this tool has been retried */
+  retryCount?: number;
+}
+
+/**
+ * Tool chain state tracked per session.
+ */
+export interface ToolChainState {
+  /** Current position in the tool chain */
+  chainPosition: number;
+  /** Name of the last completed tool */
+  lastToolName?: string;
+  /** Whether the last tool succeeded */
+  lastToolSuccess?: boolean;
 }
 
 /**

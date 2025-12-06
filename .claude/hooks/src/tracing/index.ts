@@ -41,6 +41,8 @@ export type {
   ObservationType,
   SessionMetrics,
   TokenUsage,
+  ToolChainContext,
+  ToolChainState,
 } from "./types.js";
 
 // Provider exports
@@ -48,9 +50,11 @@ export {
   initTracing,
   shutdownTracing,
   forceFlush,
+  flushScores,
   getTracingConfig,
   isTracingInitialized,
   createConfigFromEnv,
+  getLangfuseClient,
 } from "./provider.js";
 
 // Observation factory exports
@@ -72,12 +76,50 @@ export {
   createTraceparent,
   parseTraceparent,
   withParentContext,
+  // Status message formatting
+  formatStatusMessage,
   type SessionObservation,
   type ToolObservation,
   type CreateObservationOptions,
   type FinalizeSessionOptions,
   type UpsertObservationParams,
 } from "./observations.js";
+
+// Score recording exports for failure tracking
+export {
+  // Score name constants
+  SCORE_TOOL_SUCCESS,
+  SCORE_FAILURE_CATEGORY,
+  SCORE_ERROR_SEVERITY,
+  SCORE_SESSION_SUCCESS_RATE,
+  SCORE_SESSION_HEALTH,
+  SCORE_DOMINANT_FAILURE_MODE,
+  SCORE_IS_CASCADE_FAILURE,
+  // Failure categories
+  FAILURE_CATEGORIES,
+  SESSION_HEALTH_VALUES,
+  // Helper functions
+  getErrorSeverity,
+  createScoreIdempotencyKey,
+  calculateSessionHealth,
+  // Score recording functions
+  recordScore,
+  recordToolSuccessScore,
+  recordFailureCategoryScore,
+  recordErrorSeverityScore,
+  recordCascadeFailureScore,
+  recordSessionSuccessRateScore,
+  recordSessionHealthScore,
+  recordDominantFailureModeScore,
+  // Composite recording functions
+  recordToolFailureScores,
+  recordToolSuccessScores,
+  recordSessionHealthScores,
+  // Types
+  type FailureCategory,
+  type SessionHealth,
+  type RecordScoreOptions,
+} from "./scores.js";
 
 // Persistence exports for cross-process span linking
 export {
@@ -106,6 +148,10 @@ export {
   hasProcessedEvent,
   markEventProcessed,
   cleanupProcessedEvents,
+  // Tool chain state for cascade failure detection
+  getToolChainContext,
+  updateToolChainState,
+  resetToolChainState,
   type PersistedSpanState,
   type TokenData,
   type PendingParentContext,

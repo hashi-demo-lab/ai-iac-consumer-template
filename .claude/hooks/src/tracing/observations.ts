@@ -895,6 +895,52 @@ export function recordEventWithContext(
 }
 
 /**
+ * Format a status message for display in Langfuse UI.
+ * Provides a concise, informative message about tool execution status.
+ *
+ * @param result - The tool result
+ * @param toolName - The tool name
+ * @returns Formatted status message
+ */
+export function formatStatusMessage(result: ToolResult, toolName?: string): string | undefined {
+  if (result.success) {
+    // Don't set statusMessage for successful tools (cleaner UI)
+    return undefined;
+  }
+
+  const parts: string[] = [];
+
+  // Add error type badge
+  if (result.errorType) {
+    parts.push(`[${result.errorType.toUpperCase()}]`);
+  }
+
+  // Add tool name for context
+  if (toolName) {
+    parts.push(toolName);
+  }
+
+  // Add specific error info
+  if (result.exitCode !== undefined && result.exitCode !== 0) {
+    parts.push(`exit=${result.exitCode}`);
+  }
+  if (result.durationMs !== undefined && result.durationMs > 30000) {
+    parts.push(`duration=${Math.round(result.durationMs / 1000)}s`);
+  }
+
+  // Add error message (truncated)
+  if (result.error) {
+    const maxLen = 100;
+    const truncated = result.error.length > maxLen
+      ? result.error.substring(0, maxLen) + "..."
+      : result.error;
+    parts.push(`- ${truncated}`);
+  }
+
+  return parts.length > 0 ? parts.join(" ") : undefined;
+}
+
+/**
  * Update a tool observation with its result.
  *
  * @param observation - The observation to update
@@ -954,10 +1000,13 @@ export function finalizeToolObservation(
   }
 
   // Update the observation with result data
+  // Use formatted status message for better UI visibility
+  const statusMessage = formatStatusMessage(result, ctx?.toolName);
+
   observation.update({
     output: result.output,
     level,
-    statusMessage: result.error,
+    statusMessage,
     metadata,
   });
 

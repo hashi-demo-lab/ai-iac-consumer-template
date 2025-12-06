@@ -12,7 +12,7 @@
 import { writeFileSync, readFileSync, unlinkSync, existsSync, mkdirSync, readdirSync, renameSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
-import type { SpanState, ActiveSpanInfo, SessionMetrics } from "./types.js";
+import type { SpanState, ActiveSpanInfo, SessionMetrics, ToolChainContext } from "./types.js";
 
 /** Directory for storing span state files */
 const PERSISTENCE_DIR = join(tmpdir(), "langfuse-claude-code");
@@ -783,4 +783,79 @@ export function cleanupProcessedEvents(sessionId: string): void {
     state.processedEvents = filtered;
     saveSpanState(sessionId, state);
   }
+}
+
+// =============================================================================
+// Tool Chain State Management
+// =============================================================================
+
+/**
+ * Get the current tool chain context for a session.
+ * Returns information about the preceding tool for cascade failure detection.
+ *
+ * @param sessionId - The session identifier
+ * @returns Tool chain context, or undefined if no chain state exists
+ */
+export function getToolChainContext(sessionId: string): ToolChainContext | undefined {
+  const state = loadSpanState(sessionId);
+  if (!state?.toolChain) {
+    // Return initial context for first tool
+    return {
+      position: 1,
+    };
+  }
+
+  const { chainPosition, lastToolName, lastToolSuccess } = state.toolChain;
+
+  return {
+    position: chainPosition + 1,
+    precedingTool: lastToolName,
+    precedingSuccess: lastToolSuccess,
+  };
+}
+
+/**
+ * Update the tool chain state after a tool completes.
+ * This should be called in PostToolUse after processing results.
+ *
+ * @param sessionId - The session identifier
+ * @param toolName - Name of the completed tool
+ * @param success - Whether the tool succeeded
+ */
+export function updateToolChainState(
+  sessionId: string,
+  toolName: string,
+  success: boolean
+): void {
+  const state = loadSpanState(sessionId);
+  if (!state) return;
+
+  const currentPosition = state.toolChain?.chainPosition ?? 0;
+
+  state.toolChain = {
+    chainPosition: currentPosition + 1,
+    lastToolName: toolName,
+    lastToolSuccess: success,
+  };
+
+  saveSpanState(sessionId, state);
+}
+
+/**
+ * Reset the tool chain state for a session.
+ * Called when starting a new logical chain of operations.
+ *
+ * @param sessionId - The session identifier
+ */
+export function resetToolChainState(sessionId: string): void {
+  const state = loadSpanState(sessionId);
+  if (!state) return;
+
+  state.toolChain = {
+    chainPosition: 0,
+    lastToolName: undefined,
+    lastToolSuccess: undefined,
+  };
+
+  saveSpanState(sessionId, state);
 }

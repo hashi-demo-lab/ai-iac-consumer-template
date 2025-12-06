@@ -62,6 +62,7 @@ import {
   initTracing,
   shutdownTracing,
   forceFlush,
+  flushScores,
   createConfigFromEnv,
   createSessionObservation,
   createSessionObservationWithParent,
@@ -97,12 +98,23 @@ import {
   hasProcessedEvent,
   markEventProcessed,
   cleanupProcessedEvents,
+  // Score recording for failure tracking
+  getLangfuseClient,
+  recordToolFailureScores,
+  recordToolSuccessScores,
+  recordSessionHealthScores,
+  // Status message formatting
+  formatStatusMessage,
+  // Tool chain state for cascade failure detection
+  getToolChainContext,
+  updateToolChainState,
   // Types
   type SessionObservation,
   type ToolObservation,
   type ToolContext,
   type ToolResult,
   type PendingParentContext,
+  type ToolChainContext,
 } from "./tracing/index.js";
 
 /**
@@ -124,6 +136,7 @@ interface ActiveObservation {
   observation: ToolObservation;
   startTime: number;
   ctx: ToolContext;
+  chainContext?: ToolChainContext;
 }
 const activeObservations = new Map<string, ActiveObservation>();
 
@@ -279,10 +292,14 @@ function processEvent(event: ClaudeCodeEvent): void {
         observation = createToolObservation(ctx, undefined, actualParent);
       }
 
+      // Get tool chain context for cascade failure detection
+      const chainContext = getToolChainContext(event.session_id);
+
       activeObservations.set(event.tool_use_id, {
         observation,
         startTime: Date.now(),
         ctx,
+        chainContext,
       });
 
       // Create traceparent for this span (for nested tool linking)
@@ -370,6 +387,23 @@ function processEvent(event: ClaudeCodeEvent): void {
         finalizeToolObservation(active.observation, result, active.ctx, event.tokens);
         activeObservations.delete(event.tool_use_id!);
 
+        // Record scores for failure tracking
+        // Check if preceding tool failed for cascade detection
+        const precedingFailed = active.chainContext?.precedingSuccess === false;
+        const langfuse = getLangfuseClient();
+        if (langfuse) {
+          if (result.success) {
+            recordToolSuccessScores(langfuse, active.observation.traceId, active.observation.id)
+              .catch((e) => DEBUG && log("DEBUG", `Score recording failed: ${e}`));
+          } else {
+            recordToolFailureScores(langfuse, active.observation.traceId, active.observation.id, result.errorType, precedingFailed)
+              .catch((e) => DEBUG && log("DEBUG", `Score recording failed: ${e}`));
+          }
+        }
+
+        // Update tool chain state for next tool
+        updateToolChainState(event.session_id, event.tool_name, result.success);
+
         // Note: persistedSpan was already popped at the top of PostToolUse handler
         // No need to pop again here
 
@@ -449,7 +483,7 @@ function processEvent(event: ClaudeCodeEvent): void {
             isRemote: true as const,
           } : undefined;
 
-          upsertToolObservation({
+          const upsertedObs = upsertToolObservation({
             id: persistedSpan.observationId, // Same ID = upsert, not create
             traceId: persistedSpan.traceId || "",
             name: restoredCtx.isSubagent
@@ -459,7 +493,7 @@ function processEvent(event: ClaudeCodeEvent): void {
             endTime: new Date(),
             output: event.tool_response,
             level: result.success ? "DEFAULT" : "ERROR",
-            statusMessage: result.error,
+            statusMessage: formatStatusMessage(result, restoredCtx.toolName),
             metadata: resultMetadata,
             sessionId: event.session_id,
             parentSpanContext,
@@ -467,7 +501,25 @@ function processEvent(event: ClaudeCodeEvent): void {
             parentObservationId: persistedSpan.parentObservationId, // Pass parent observation ID for hierarchy metadata
             usageDetails, // Pass usageDetails for Langfuse cost tracking
           });
-          debugLog(`Cross-process upsert with observationId: ${persistedSpan.observationId}${usageDetails ? `, tokens: ${usageDetails.total}` : ""}`);
+          debugLog(`Cross-process upsert with observationId: ${upsertedObs.id} (original: ${persistedSpan.observationId})${usageDetails ? `, tokens: ${usageDetails.total}` : ""}`);
+
+          // Record scores for cross-process upsert
+          // Use the actual observation IDs from the upserted observation
+          const chainContext = getToolChainContext(event.session_id);
+          const precedingFailed = chainContext?.precedingSuccess === false;
+          const langfuse = getLangfuseClient();
+          if (langfuse && upsertedObs.id && upsertedObs.traceId) {
+            if (result.success) {
+              recordToolSuccessScores(langfuse, upsertedObs.traceId, upsertedObs.id)
+                .catch((e) => DEBUG && log("DEBUG", `Score recording failed: ${e}`));
+            } else {
+              recordToolFailureScores(langfuse, upsertedObs.traceId, upsertedObs.id, result.errorType, precedingFailed)
+                .catch((e) => DEBUG && log("DEBUG", `Score recording failed: ${e}`));
+            }
+          }
+
+          // Update tool chain state
+          updateToolChainState(event.session_id, event.tool_name, result.success);
         } else {
           // Legacy fallback: create new observation (may cause duplicates)
           let observation: ToolObservation;
@@ -482,6 +534,24 @@ function processEvent(event: ClaudeCodeEvent): void {
             debugLog(`Cross-process observation with in-memory session (no traceparent)`);
           }
           finalizeToolObservation(observation, result, restoredCtx, event.tokens);
+
+          // Record scores for legacy path
+          // Get chain context from persisted state for cascade detection
+          const chainContext = getToolChainContext(event.session_id);
+          const precedingFailed = chainContext?.precedingSuccess === false;
+          const langfuse = getLangfuseClient();
+          if (langfuse) {
+            if (result.success) {
+              recordToolSuccessScores(langfuse, observation.traceId, observation.id)
+                .catch((e) => DEBUG && log("DEBUG", `Score recording failed: ${e}`));
+            } else {
+              recordToolFailureScores(langfuse, observation.traceId, observation.id, result.errorType, precedingFailed)
+                .catch((e) => DEBUG && log("DEBUG", `Score recording failed: ${e}`));
+            }
+          }
+
+          // Update tool chain state
+          updateToolChainState(event.session_id, event.tool_name, result.success);
         }
 
         // NOTE: Pending parent context cleanup moved to SubagentStop handler.
@@ -527,6 +597,23 @@ function processEvent(event: ClaudeCodeEvent): void {
 
         finalizeToolObservation(obs, result, ctx, event.tokens);
 
+        // Record scores for no-persist path
+        const chainContext = getToolChainContext(event.session_id);
+        const precedingFailed = chainContext?.precedingSuccess === false;
+        const langfuse = getLangfuseClient();
+        if (langfuse) {
+          if (result.success) {
+            recordToolSuccessScores(langfuse, obs.traceId, obs.id)
+              .catch((e) => DEBUG && log("DEBUG", `Score recording failed: ${e}`));
+          } else {
+            recordToolFailureScores(langfuse, obs.traceId, obs.id, result.errorType, precedingFailed)
+              .catch((e) => DEBUG && log("DEBUG", `Score recording failed: ${e}`));
+          }
+        }
+
+        // Update tool chain state
+        updateToolChainState(event.session_id, event.tool_name, result.success);
+
         log(
           "INFO",
           `${event.tool_name}${
@@ -563,6 +650,23 @@ function processEvent(event: ClaudeCodeEvent): void {
         };
 
         finalizeToolObservation(observation, result, ctx, event.tokens);
+
+        // Record scores for no-id path
+        const chainContext = getToolChainContext(event.session_id);
+        const precedingFailed = chainContext?.precedingSuccess === false;
+        const langfuse = getLangfuseClient();
+        if (langfuse) {
+          if (result.success) {
+            recordToolSuccessScores(langfuse, observation.traceId, observation.id)
+              .catch((e) => DEBUG && log("DEBUG", `Score recording failed: ${e}`));
+          } else {
+            recordToolFailureScores(langfuse, observation.traceId, observation.id, result.errorType, precedingFailed)
+              .catch((e) => DEBUG && log("DEBUG", `Score recording failed: ${e}`));
+          }
+        }
+
+        // Update tool chain state
+        updateToolChainState(event.session_id, event.tool_name, result.success);
 
         log(
           "INFO",
@@ -756,6 +860,21 @@ function processEvent(event: ClaudeCodeEvent): void {
           metrics: sessionMetrics ?? undefined,
           aggregateMetrics,
         });
+
+        // Record session-level health scores
+        if (sessionMetrics) {
+          const langfuse = getLangfuseClient();
+          if (langfuse) {
+            recordSessionHealthScores(
+              langfuse,
+              sessionObs.traceId,
+              sessionMetrics.toolCount,
+              sessionMetrics.errorCount,
+              sessionMetrics.errorsByType
+            ).catch((e) => DEBUG && log("DEBUG", `Session score recording failed: ${e}`));
+          }
+        }
+
         sessionObservations.delete(event.session_id);
       }
 
@@ -829,9 +948,10 @@ async function main() {
     // Just flush pending spans without ending sessions.
 
     try {
-      // Explicitly flush spans before shutdown to ensure export completes
-      debugLog(`Flushing spans to Langfuse...`);
+      // Explicitly flush spans and scores before shutdown to ensure export completes
+      debugLog(`Flushing spans and scores to Langfuse...`);
       await forceFlush();
+      await flushScores();
       await shutdownTracing();
       debugLog(`Shutdown complete`);
     } catch (e) {
