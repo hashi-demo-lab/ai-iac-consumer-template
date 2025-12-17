@@ -55,8 +55,21 @@ Before using this template, you must configure HCP Terraform with an isolated en
 
 2. **Create a Dedicated Team**
    - Go to **Settings > Teams**
-   - Create a new team with access to the dedicated project
-   - Assign appropriate permissions (Manage Workspaces, Manage Variables)
+   - Create a new team and assign it to the dedicated project
+   - Configure **Project Team Access** with the following permissions:
+
+     **Project Access:**
+     - **Read** - Baseline permission for reading the project record
+     - **Create Workspaces** - Create workspaces in the project (grants read access on all workspaces)
+     - **Delete Workspaces** - Delete workspaces in the project
+
+     **Workspace Permissions:**
+     - **Read Variables** - Access existing variable values for validation
+     - **Read State** - View Terraform state for existing resources
+     - **Write State** - Update state during apply operations
+     - **Download Sentinel Mocks** - Download Sentinel mock data for policy testing
+     - **Manage Workspace Run Tasks** - Assign and unassign run tasks on workspaces
+     - **Lock/Unlock Workspaces** - Control workspace locking for safe operations
 
 3. **Generate Team API Token**
    - In **Settings > Teams > [Your Team]**
