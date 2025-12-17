@@ -4,7 +4,7 @@ A prescriptive agent workflow template for AI-assisted Infrastructure as Code de
 
 ## Overview
 
-This template provides an opinionated, end-to-end workflow for generating, validating, and deploying Terraform infrastructure using AI agents. It leverages the [**SpecKit**](https://github.com/Textualize/speckit) methodology - a structured approach to specification-driven development that guides AI agents through:
+This template provides an opinionated, end-to-end workflow for generating, validating, and deploying Terraform infrastructure using AI agents. It leverages the [**GitHub Spec Kit**](https://github.com/github/spec-kit) methodology - a structured approach to specification-driven development that guides AI agents through:
 
 1. **Specification** - Defining infrastructure requirements in natural language
 2. **Planning** - Generating detailed implementation plans with architecture decisions
