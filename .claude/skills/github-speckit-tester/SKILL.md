@@ -36,4 +36,4 @@ Document start time and end time, totals execution time, and tokens consumed inc
 8 /speckit.implement → tf code + sandbox test
 9 deploy (cli) → init/plan/apply
 10 /report-tf-deployment → report
-11 cleanup (confirm) → destroy
+11 commit and create a PR with details
