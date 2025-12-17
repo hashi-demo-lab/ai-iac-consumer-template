@@ -1,6 +1,24 @@
 # AI IaC Consumer Template
 
-A template repository for AI-assisted Infrastructure as Code development using Claude Code with HCP Terraform integration.
+A prescriptive agent workflow template for AI-assisted Infrastructure as Code development, powered by **Claude Code** and **HCP Terraform**.
+
+## Overview
+
+This template provides an opinionated, end-to-end workflow for generating, validating, and deploying Terraform infrastructure using AI agents. It leverages the **SpecKit** methodology - a structured approach to specification-driven development that guides AI agents through:
+
+1. **Specification** - Defining infrastructure requirements in natural language
+2. **Planning** - Generating detailed implementation plans with architecture decisions
+3. **Task Generation** - Breaking down plans into actionable, dependency-ordered tasks
+4. **Implementation** - Executing tasks to produce production-ready Terraform code
+5. **Deployment** - Applying infrastructure via HCP Terraform with remote state management
+
+### Key Features
+
+- **Devcontainer-based Development** - Fully configured development environment with all tools pre-installed
+- **HCP Terraform Integration** - Remote execution, state management, and workspace automation
+- **SpecKit Workflow** - Structured AI agent workflow for consistent, high-quality infrastructure code
+- **Non-interactive Testing** - Automated end-to-end testing capability using the `github-speckit-tester` skill
+- **Best Practice Defaults** - Pre-configured for AWS with security and cost optimization in mind
 
 ## Prerequisites
 
@@ -25,6 +43,30 @@ Set these in your local environment before opening the devcontainer.
 | `TEAM_TFE_TOKEN` | **HCP Terraform Team Token** - Must be a Team API Token (not user/org token) associated with a dedicated project for workspace management |
 
 > **Important:** The `TEAM_TFE_TOKEN` must be a **Team API Token**, not a user or organization token. Create one in HCP Terraform under **Settings > Teams > [Your Team] > Team API Token**. The team should have access to a dedicated project where workspaces will be created.
+
+### HCP Terraform Setup (Pre-requisite)
+
+Before using this template, you must configure HCP Terraform with an isolated environment for testing:
+
+1. **Create a Dedicated Project**
+   - Navigate to **Projects** in HCP Terraform
+   - Create a new project (e.g., `sandbox`)
+   - This isolates test workspaces from production infrastructure
+
+2. **Create a Dedicated Team**
+   - Go to **Settings > Teams**
+   - Create a new team with access to the dedicated project
+   - Assign appropriate permissions (Manage Workspaces, Manage Variables)
+
+3. **Generate Team API Token**
+   - In **Settings > Teams > [Your Team]**
+   - Click **"Create a team token"**
+   - Save this as your `TEAM_TFE_TOKEN`
+
+4. **Configure Credential Inheritance**
+   - Create a Variable Set with AWS credentials (see below)
+   - Attach the Variable Set to your dedicated project
+   - All workspaces created in the project will inherit credentials automatically
 
 ### AWS Credentials
 
@@ -123,6 +165,8 @@ Workspace: [prefix]_<GITHUB_REPO_NAME>
 
 > **Workspace Naming:** Use `<GITHUB_REPO_NAME>` as a placeholder - it will be automatically replaced with your repository name to ensure unique workspace names across template instances.
 >
+> **Organization:** Replace `<YOUR_TFC_ORG>` with your HCP Terraform organization name. If your token only has access to a single organization, this can be omitted.
+>
 > **Testing Only:** The non-interactive approach shown in these examples is **recommended for testing and evaluation only**. For production use, remove the non-interactive directive to enable human-in-the-loop review of plans before applying infrastructure changes.
 
 ### EC2 Instance with ALB and Nginx
@@ -138,7 +182,7 @@ Provision using Terraform:
 - Use existing default VPC
 - Environment: Development (minimal cost)
 
-HCP Terraform: Organization: hashi-demos-apj, Project: sandbox
+HCP Terraform: Organization: <YOUR_TFC_ORG>, Project: sandbox
 Workspace: sandbox_ec2_<GITHUB_REPO_NAME>
 ```
 
@@ -155,7 +199,7 @@ Provision using Terraform:
 - AWS Region: ap-southeast-2
 - Environment: Development (minimal cost)
 
-HCP Terraform: Organization: hashi-demos-apj, Project: sandbox
+HCP Terraform: Organization: <YOUR_TFC_ORG>, Project: sandbox
 Workspace: sandbox_serverless_<GITHUB_REPO_NAME>
 ```
 
@@ -172,7 +216,7 @@ Provision using Terraform:
 - AWS Region: us-east-1 (ACM certs), S3 bucket: ap-southeast-2
 - Environment: Development (minimal cost)
 
-HCP Terraform: Organization: hashi-demos-apj, Project: sandbox
+HCP Terraform: Organization: <YOUR_TFC_ORG>, Project: sandbox
 Workspace: sandbox_cloudfront_<GITHUB_REPO_NAME>
 ```
 
@@ -189,7 +233,7 @@ Provision using Terraform:
 - AWS Region: ap-southeast-2
 - Environment: Development (minimal cost)
 
-HCP Terraform: Organization: hashi-demos-apj, Project: sandbox
+HCP Terraform: Organization: <YOUR_TFC_ORG>, Project: sandbox
 Workspace: sandbox_asg_<GITHUB_REPO_NAME>
 ```
 
@@ -205,7 +249,7 @@ Provision using Terraform:
 - AWS Region: ap-southeast-2
 - Environment: Development (minimal cost)
 
-HCP Terraform: Organization: hashi-demos-apj, Project: sandbox
+HCP Terraform: Organization: <YOUR_TFC_ORG>, Project: sandbox
 Workspace: sandbox_elasticache_<GITHUB_REPO_NAME>
 ```
 
@@ -222,7 +266,7 @@ Provision using Terraform:
 - AWS Region: ap-southeast-2
 - Environment: Development (minimal cost)
 
-HCP Terraform: Organization: hashi-demos-apj, Project: sandbox
+HCP Terraform: Organization: <YOUR_TFC_ORG>, Project: sandbox
 Workspace: sandbox_sqs_<GITHUB_REPO_NAME>
 ```
 
