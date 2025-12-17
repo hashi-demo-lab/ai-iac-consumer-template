@@ -19,6 +19,18 @@ This template provides an opinionated, end-to-end workflow for generating, valid
 - **SpecKit Workflow** - Structured AI agent workflow for consistent, high-quality infrastructure code
 - **Non-interactive Testing** - Automated end-to-end testing capability using the `github-speckit-tester` skill
 - **Best Practice Defaults** - Pre-configured for AWS with security and cost optimization in mind
+- **Pre-configured MCP Servers** - Model Context Protocol servers for enhanced AI capabilities
+
+### MCP Servers
+
+This template includes pre-configured [MCP (Model Context Protocol)](https://modelcontextprotocol.io/) servers that extend Claude's capabilities:
+
+| Server | Description |
+|--------|-------------|
+| **terraform** | [HCP Terraform MCP Server](https://github.com/hashicorp/terraform-mcp-server) - Workspace management, run execution, registry lookups, and provider documentation |
+| **aws-knowledge-mcp-server** | [AWS Knowledge MCP](https://awslabs.github.io/mcp/) - AWS documentation search, best practices, and service recommendations |
+
+MCP servers are automatically configured via `.mcp.json` and available when running in the devcontainer.
 
 ## Prerequisites
 
